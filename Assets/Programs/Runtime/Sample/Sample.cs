@@ -8,8 +8,6 @@ namespace Sample
 {
     public class Sample : MonoBehaviour
     {
-        private static SampleGameService SampleGameService => GameManager.Instance.SampleGameService;
-
         private void Start()
         {
             Debug.Log(Addressables.BuildPath);

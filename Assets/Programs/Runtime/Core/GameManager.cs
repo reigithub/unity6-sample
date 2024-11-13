@@ -7,30 +7,30 @@ namespace Game.Core
     {
         public static readonly GameManager Instance = new();
 
-        private GameEnvConfig _gameEnvConfig;
-
-        private readonly GameServiceReference<SampleGameService> _sampleGameService;
-        public SampleGameService SampleGameService => _sampleGameService;
+        private GameConfig _gameConfig;
 
         private GameManager()
         {
         }
 
-        public void Initialize(GameEnvConfig config)
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void EntryPoint()
         {
-            _gameEnvConfig = config;
+            Instance.GameStart();
         }
 
         public void GameStart()
         {
-            ThrowExceptionIfNotInitialize();
+            LoadConfig();
             AppQuitIfJailbreak();
             GameServiceManager.Instance.StartUp();
+            GameServiceManager.Instance.GetService<HelloWorldGameService>().HelloWorld();
         }
 
-        private void ThrowExceptionIfNotInitialize()
+        private void LoadConfig()
         {
-            if (_gameEnvConfig is null)
+            _gameConfig ??= GameConfigManager.Load();
+            if (_gameConfig is null)
             {
                 throw new InvalidOperationException("ゲーム環境設定が読み込まれていない為、スタート処理に失敗しました");
             }

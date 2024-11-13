@@ -5,10 +5,10 @@ namespace Game.Core
     {
         private TService _service;
 
-        private TService Service
+        public TService Service
             => _service ??= GameServiceManager.Instance.GetService<TService>();
 
-        public static implicit operator TService(GameServiceReference<TService> reference)
-            => reference.Service;
+        // public static implicit operator TService(GameServiceReference<TService> reference)
+        //     => reference.Service;
     }
 }

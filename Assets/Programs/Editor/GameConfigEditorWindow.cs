@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Game.Editor
 {
-    public class GameEnvConfigEditorWindow : EditorWindow
+    public class GameConfigEditorWindow : EditorWindow
     {
         private GameEnv[] _envs = null;
         private string[] _envNames = null;
@@ -16,7 +16,7 @@ namespace Game.Editor
         {
             titleContent = new GUIContent("ゲーム環境設定");
 
-            _envs ??= GameEnvConfigManager.LoadAll()
+            _envs ??= GameConfigManager.LoadAll()
                 .Select(x => x.Env)
                 .ToArray();
 
@@ -24,7 +24,7 @@ namespace Game.Editor
                 .Select(x => x.ToString())
                 .ToArray();
 
-            var envName = GameEnvConfigManager.Get().ToString();
+            var envName = GameConfigManager.GetEnv().ToString();
             _index = Math.Max(0, Array.IndexOf(_envs, envName));
         }
 
@@ -34,7 +34,7 @@ namespace Game.Editor
             if (_index != index)
             {
                 _index = index;
-                GameEnvConfigManager.Set(_envs[_index]);
+                GameConfigManager.SetEnv(_envs[_index]);
             }
         }
     }

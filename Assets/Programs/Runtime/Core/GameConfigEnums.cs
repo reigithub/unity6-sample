@@ -5,6 +5,7 @@ namespace Game.Core
         Local = 0,
         Develop = 1,
         Staging = 2,
-        Release = 3,
+        Review = 3,
+        Release = 4,
     }
 }
