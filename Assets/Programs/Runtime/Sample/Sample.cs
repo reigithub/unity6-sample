@@ -29,12 +29,13 @@ namespace Sample
 
         private async Task LoadCubeAssetAsync()
         {
-            var asset = await Addressables.LoadAssetAsync<GameObject>("Assets/Project/Prefabs/Cube.prefab").Task;
-            var obj = Instantiate(asset, gameObject.transform, false);
-            if (obj.TryGetComponent<Cube>(out var cube))
-            {
-                cube.Greet();
-            }
+            // var asset = await Addressables.LoadAssetAsync<GameObject>("Assets/Project/Prefabs/Cube.prefab").Task;
+            // var obj = Instantiate(asset, gameObject.transform, false);
+            // if (obj.TryGetComponent<Cube>(out var cube))
+            // {
+            //     cube.Greet();
+            // }
+            await Task.CompletedTask;
         }
     }
 }
