@@ -3,6 +3,7 @@ using MessagePipe;
 using R3;
 using UnityEngine;
 using UnityEngine.UI;
+using Game.Core.MessagePipe;
 
 namespace Sample
 {

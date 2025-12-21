@@ -1,5 +1,7 @@
 using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Game.Core.Services;
 
 namespace Game.Core
 {
@@ -8,6 +10,9 @@ namespace Game.Core
         public static readonly GameManager Instance = new();
 
         private GameConfig _gameConfig;
+
+        private readonly MessagePipe.MessageBroker _messageBroker = new();
+        public MessagePipe.MessageBroker MessageBroker => _messageBroker;
 
         private GameManager()
         {
@@ -19,12 +24,14 @@ namespace Game.Core
             Instance.GameStart();
         }
 
-        public void GameStart()
+        private void GameStart()
         {
             LoadConfig();
             AppQuitIfJailbreak();
+
             GameServiceManager.Instance.StartUp();
-            GameServiceManager.Instance.GetService<HelloWorldGameService>().HelloWorld();
+
+            LoadAssetAsync().Forget();
         }
 
         private void LoadConfig()
@@ -48,6 +55,11 @@ namespace Game.Core
             {
                 Application.Quit(-1);
             }
+        }
+
+        private async UniTask LoadAssetAsync()
+        {
+            await GameCommonObjects.LoadAssetAsync(_messageBroker);
         }
 
         public void GameReStart()

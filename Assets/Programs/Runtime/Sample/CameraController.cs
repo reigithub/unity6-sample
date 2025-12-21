@@ -10,12 +10,17 @@ namespace Sample
 
         private void Start()
         {
-            _offset = this.transform.position - player.transform.position;
+            if (player) _offset = this.transform.position - player.transform.position;
         }
 
         private void LateUpdate()
         {
-            this.transform.position = player.transform.position + _offset;
+            if (player) this.transform.position = player.transform.position + _offset;
+        }
+
+        public void SetPlayer(GameObject p)
+        {
+            player = p;
         }
     }
 }

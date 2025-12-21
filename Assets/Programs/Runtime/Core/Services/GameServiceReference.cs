@@ -1,4 +1,4 @@
-namespace Game.Core
+namespace Game.Core.Services
 {
     public struct GameServiceReference<TService>
         where TService : GameService, new()

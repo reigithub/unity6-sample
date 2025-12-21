@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Extensions
+namespace Game.Core.Extensions
 {
     public static class TaskExtensions
     {
