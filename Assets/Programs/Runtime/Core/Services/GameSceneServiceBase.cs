@@ -9,14 +9,14 @@ namespace Game.Core.Services
 
     public partial class GameSceneService : GameSceneServiceBase<GameSceneBase>
     {
-        public readonly struct SceneTransitionRequest
+        public readonly struct GameSceneTransitionRequest
         {
             public readonly Type NextSceneType;
             public readonly SceneTransitionType TransitionType;
 
             public readonly short Token;
 
-            public SceneTransitionRequest(
+            public GameSceneTransitionRequest(
                 Type nextSceneType,
                 SceneTransitionType transitionType,
                 short token)
