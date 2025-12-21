@@ -19,13 +19,18 @@ namespace Sample
 
         private void Update()
         {
-            if (_player is not null)
+            if (_player)
             {
                 if (_navMeshAgent && _navMeshAgent.pathStatus != NavMeshPathStatus.PathInvalid)
                 {
                     _navMeshAgent.SetDestination(_player.position);
                 }
             }
+        }
+
+        public void SetPlayer(GameObject p)
+        {
+            _player = p.transform;
         }
     }
 }

@@ -14,7 +14,7 @@ public class GameCommonObjects : MonoBehaviour
 
     public static GameCommonObjects Instance { get; private set; }
 
-    public static async UniTask LoadAssetAsync(MessageBroker messageBroker)
+    public static async UniTask LoadAssetAsync()
     {
         var assetService = GameServiceManager.Instance.GetService<AddressableAssetService>();
         var prefab = await assetService.LoadAssetAsync<GameObject>(Address);
@@ -31,7 +31,7 @@ public class GameCommonObjects : MonoBehaviour
         if (go.TryGetComponent<GameCommonObjects>(out var commonObjects))
         {
             DontDestroyOnLoad(go);
-            commonObjects.Initialize(messageBroker);
+            commonObjects.Initialize();
             Instance = commonObjects;
         }
     }
@@ -41,29 +41,30 @@ public class GameCommonObjects : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _countText;
     [SerializeField] private TextMeshProUGUI _winText;
 
-    private MessageBroker _messageBroker;
     private int _count;
 
-    private void Initialize(MessageBroker messageBroker)
+    private void Initialize()
     {
-        _cameraController.enabled = false;
+        var messageBrokerService = GameServiceManager.Instance.GetService<MessageBrokerService>();
+        var globalMessageBroker = messageBrokerService.GlobalMessageBroker;
+        // globalMessageBroker.GetSubscriber<int, GameObject>()
+        //     .Subscribe(MessageKey.Player.SpawnPlayer, handler: player => { _cameraController.SetPlayer(player); })
+        //     .AddTo(this);
+
+        // _cameraController.enabled = false;
 
         _count = 0;
         SetCountText();
 
-        _messageBroker = messageBroker;
-        _messageBroker.AddMessageBroker<int, int>();
-        _messageBroker.AddMessageBroker<int, bool>();
-        _messageBroker.Build();
-        _messageBroker.GetSubscriber<int, int>()
-            .Subscribe(MessageKey.Stat.AddScore, handler: score =>
+        globalMessageBroker.GetSubscriber<int, int>()
+            .Subscribe(MessageKey.Sample.AddScore, handler: score =>
             {
                 _count += score;
                 SetCountText();
             })
             .AddTo(this);
-        _messageBroker.GetSubscriber<int, bool>()
-            .Subscribe(MessageKey.Stat.EnemyCollied, handler: isCollied =>
+        globalMessageBroker.GetSubscriber<int, bool>()
+            .Subscribe(MessageKey.Sample.EnemyCollied, handler: isCollied =>
             {
                 _winText.gameObject.SetActive(isCollied);
                 if (isCollied) _winText.text = "You Lose...";
@@ -78,5 +79,10 @@ public class GameCommonObjects : MonoBehaviour
         bool isWin = _count >= 16;
         _winText.gameObject.SetActive(isWin);
         if (isWin) _winText.text = "You Win!!";
+    }
+
+    public void SetPlayer(GameObject p)
+    {
+        _cameraController.SetPlayer(p);
     }
 }

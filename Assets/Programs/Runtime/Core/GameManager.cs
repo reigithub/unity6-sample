@@ -1,5 +1,6 @@
 using System;
-using Cysharp.Threading.Tasks;
+using System.Threading.Tasks;
+using Game.Core.Extensions;
 using UnityEngine;
 using Game.Core.Services;
 
@@ -11,8 +12,7 @@ namespace Game.Core
 
         private GameConfig _gameConfig;
 
-        private readonly MessagePipe.MessageBroker _messageBroker = new();
-        public MessagePipe.MessageBroker MessageBroker => _messageBroker;
+        public Task LoadCommonObjectsTask { get; private set; }
 
         private GameManager()
         {
@@ -28,10 +28,10 @@ namespace Game.Core
         {
             LoadConfig();
             AppQuitIfJailbreak();
-
             GameServiceManager.Instance.StartUp();
-
-            LoadAssetAsync().Forget();
+            GameServiceManager.Instance.AddService<MessageBrokerService>();
+            LoadCommonObjectsTask = LoadCommonObjectsAsync();
+            LoadCommonObjectsTask.Forget();
         }
 
         private void LoadConfig()
@@ -57,9 +57,9 @@ namespace Game.Core
             }
         }
 
-        private async UniTask LoadAssetAsync()
+        private async Task LoadCommonObjectsAsync()
         {
-            await GameCommonObjects.LoadAssetAsync(_messageBroker);
+            await GameCommonObjects.LoadAssetAsync();
         }
 
         public void GameReStart()

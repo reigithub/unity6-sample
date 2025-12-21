@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_GUID: ab956b5b82bfa614baabbac2e24e7add
   m_SerializeEntries:
+  - m_GUID: 3a8d1e0bdbb954c4083cedaf437d6248
+    m_Address: Assets/Prefabs/Player_UnityChan.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 54f6aae839de95a43bff005c63f48350
     m_Address: Assets/Prefabs/GameCommonObjects.prefab
     m_ReadOnly: 0

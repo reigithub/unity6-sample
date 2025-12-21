@@ -1,5 +1,6 @@
 using Game.Core;
 using Game.Core.MessagePipe;
+using Game.Core.Services;
 using UnityChan;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ namespace Sample
 
         private Animator _animator;
 
-        private MessageBroker _messageBroker;
+        private GlobalMessageBroker _globalMessageBroker;
 
         private void Awake()
         {
@@ -27,7 +28,7 @@ namespace Sample
         private void OnEnable()
         {
             _inputSystem.Enable();
-            _messageBroker = GameManager.Instance.MessageBroker;
+            _globalMessageBroker = GameServiceManager.Instance.GetService<MessageBrokerService>().GlobalMessageBroker;
         }
 
         private void OnDisable() => _inputSystem.Disable();
@@ -61,7 +62,7 @@ namespace Sample
             {
                 other.gameObject.SetActive(false);
 
-                _messageBroker.GetPublisher<int, bool>().Publish(MessageKey.Stat.EnemyCollied, true);
+                _globalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Sample.EnemyCollied, true);
             }
         }
 
@@ -71,7 +72,7 @@ namespace Sample
             {
                 other.gameObject.SetActive(false);
 
-                _messageBroker.GetPublisher<int, int>().Publish(MessageKey.Stat.AddScore, 1);
+                _globalMessageBroker.GetPublisher<int, int>().Publish(MessageKey.Sample.AddScore, 1);
             }
         }
     }
