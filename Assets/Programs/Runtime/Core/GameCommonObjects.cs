@@ -8,81 +8,85 @@ using Sample;
 using TMPro;
 using UnityEngine;
 
-public class GameCommonObjects : MonoBehaviour
+
+namespace Game.Core
 {
-    private const string Address = "Assets/Prefabs/GameCommonObjects.prefab";
-
-    public static GameCommonObjects Instance { get; private set; }
-
-    public static async UniTask LoadAssetAsync()
+    public class GameCommonObjects : MonoBehaviour
     {
-        var assetService = GameServiceManager.Instance.GetService<AddressableAssetService>();
-        var prefab = await assetService.LoadAssetAsync<GameObject>(Address);
-        if (prefab == null)
+        private const string Address = "Assets/Prefabs/GameCommonObjects.prefab";
+
+        public static GameCommonObjects Instance { get; private set; }
+
+        public static async UniTask LoadAssetAsync()
         {
-            Debug.LogError($"Load Asset Failed. {Address}");
-            Debug.Break();
+            var assetService = GameServiceManager.Instance.GetService<AddressableAssetService>();
+            var prefab = await assetService.LoadAssetAsync<GameObject>(Address);
+            if (prefab == null)
+            {
+                Debug.LogError($"Load Asset Failed. {Address}");
+                Debug.Break();
+            }
+
+            Instance.SafeDestroy();
+            Instance = null;
+
+            var go = Instantiate(prefab);
+            if (go.TryGetComponent<GameCommonObjects>(out var commonObjects))
+            {
+                DontDestroyOnLoad(go);
+                commonObjects.Initialize();
+                Instance = commonObjects;
+            }
         }
 
-        Instance.SafeDestroy();
-        Instance = null;
+        [SerializeField] private CameraController _cameraController;
 
-        var go = Instantiate(prefab);
-        if (go.TryGetComponent<GameCommonObjects>(out var commonObjects))
+        [SerializeField] private TextMeshProUGUI _countText;
+        [SerializeField] private TextMeshProUGUI _winText;
+
+        private int _count;
+
+        private void Initialize()
         {
-            DontDestroyOnLoad(go);
-            commonObjects.Initialize();
-            Instance = commonObjects;
+            var messageBrokerService = GameServiceManager.Instance.GetService<MessageBrokerService>();
+            var globalMessageBroker = messageBrokerService.GlobalMessageBroker;
+            // globalMessageBroker.GetSubscriber<int, GameObject>()
+            //     .Subscribe(MessageKey.Player.SpawnPlayer, handler: player => { _cameraController.SetPlayer(player); })
+            //     .AddTo(this);
+
+            // _cameraController.enabled = false;
+
+            _count = 0;
+            SetCountText();
+
+            globalMessageBroker.GetSubscriber<int, int>()
+                .Subscribe(MessageKey.Sample.AddScore, handler: score =>
+                {
+                    _count += score;
+                    SetCountText();
+                })
+                .AddTo(this);
+            globalMessageBroker.GetSubscriber<int, bool>()
+                .Subscribe(MessageKey.Sample.EnemyCollied, handler: isCollied =>
+                {
+                    _winText.gameObject.SetActive(isCollied);
+                    if (isCollied) _winText.text = "You Lose...";
+                })
+                .AddTo(this);
         }
-    }
 
-    [SerializeField] private CameraController _cameraController;
+        private void SetCountText()
+        {
+            _countText.text = "Count: " + _count;
 
-    [SerializeField] private TextMeshProUGUI _countText;
-    [SerializeField] private TextMeshProUGUI _winText;
+            bool isWin = _count >= 16;
+            _winText.gameObject.SetActive(isWin);
+            if (isWin) _winText.text = "You Win!!";
+        }
 
-    private int _count;
-
-    private void Initialize()
-    {
-        var messageBrokerService = GameServiceManager.Instance.GetService<MessageBrokerService>();
-        var globalMessageBroker = messageBrokerService.GlobalMessageBroker;
-        // globalMessageBroker.GetSubscriber<int, GameObject>()
-        //     .Subscribe(MessageKey.Player.SpawnPlayer, handler: player => { _cameraController.SetPlayer(player); })
-        //     .AddTo(this);
-
-        // _cameraController.enabled = false;
-
-        _count = 0;
-        SetCountText();
-
-        globalMessageBroker.GetSubscriber<int, int>()
-            .Subscribe(MessageKey.Sample.AddScore, handler: score =>
-            {
-                _count += score;
-                SetCountText();
-            })
-            .AddTo(this);
-        globalMessageBroker.GetSubscriber<int, bool>()
-            .Subscribe(MessageKey.Sample.EnemyCollied, handler: isCollied =>
-            {
-                _winText.gameObject.SetActive(isCollied);
-                if (isCollied) _winText.text = "You Lose...";
-            })
-            .AddTo(this);
-    }
-
-    private void SetCountText()
-    {
-        _countText.text = "Count: " + _count;
-
-        bool isWin = _count >= 16;
-        _winText.gameObject.SetActive(isWin);
-        if (isWin) _winText.text = "You Win!!";
-    }
-
-    public void SetPlayer(GameObject p)
-    {
-        _cameraController.SetPlayer(p);
+        public void SetPlayer(GameObject p)
+        {
+            _cameraController.SetPlayer(p);
+        }
     }
 }

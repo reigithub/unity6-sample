@@ -6,6 +6,9 @@ using UnityEngine;
 
 namespace Sample
 {
+    /// <summary>
+    /// SD-Unityちゃん用のプレイヤーコントローラー
+    /// </summary>
     public class SDUnityChanController : MonoBehaviour
     {
         [SerializeField] private float _speed = 1f;
@@ -13,6 +16,7 @@ namespace Sample
         private SDUnityChanInputSystem _inputSystem;
         private SDUnityChanInputSystem.PlayerActions _player;
 
+        // TODO: StateMachineでアニメーション操作
         private Animator _animator;
 
         private GlobalMessageBroker _globalMessageBroker;

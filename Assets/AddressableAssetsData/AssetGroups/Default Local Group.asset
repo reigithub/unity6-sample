@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_GUID: ab956b5b82bfa614baabbac2e24e7add
   m_SerializeEntries:
+  - m_GUID: 37474fefc6ee42f4fabd30f28e8d5fc2
+    m_Address: Assets/Prefabs/Enemy_Box.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3a8d1e0bdbb954c4083cedaf437d6248
     m_Address: Assets/Prefabs/Player_UnityChan.prefab
     m_ReadOnly: 0

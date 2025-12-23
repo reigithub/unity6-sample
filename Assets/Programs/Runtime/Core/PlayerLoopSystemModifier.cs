@@ -4,6 +4,10 @@ using UnityEngine.LowLevel;
 
 namespace Game.Core
 {
+    /// <summary>
+    /// PlayerLoopSystemに処理を挟みたい時の修正用スコープ
+    /// 使用方法: using(var m = new PlayerLoopSystemModifier()) ｛}
+    /// </summary>
     public struct PlayerLoopSystemModifier : IDisposable
     {
         private PlayerLoopSystem _rootSystem;
@@ -18,6 +22,16 @@ namespace Game.Core
             return new PlayerLoopSystemModifier(PlayerLoop.GetCurrentPlayerLoop());
         }
 
+        public void Update()
+        {
+            PlayerLoop.SetPlayerLoop(_rootSystem);
+        }
+
+        public void Dispose()
+        {
+            Update();
+        }
+
         public bool InsertBefore<T>(in PlayerLoopSystem subSystem) where T : struct
         {
             return Insert<T>(0, subSystem, ref _rootSystem);
@@ -26,11 +40,6 @@ namespace Game.Core
         public bool InsertAfter<T>(in PlayerLoopSystem subSystem) where T : struct
         {
             return Insert<T>(1, subSystem, ref _rootSystem);
-        }
-
-        public void Dispose()
-        {
-            PlayerLoop.SetPlayerLoop(_rootSystem);
         }
 
         private static bool Insert<T>(int insertOffset, in PlayerLoopSystem subSystem, ref PlayerLoopSystem parentSystem)
