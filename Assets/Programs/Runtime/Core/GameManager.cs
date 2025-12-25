@@ -3,16 +3,22 @@ using System.Threading.Tasks;
 using Game.Core.Extensions;
 using UnityEngine;
 using Game.Core.Services;
+using Sample;
 
 namespace Game.Core
 {
-    public partial class GameManager
+    public sealed partial class GameManager
     {
-        public static readonly GameManager Instance = new();
+        private static readonly Lazy<GameManager> InstanceLazy = new(() => new GameManager());
+        public static GameManager Instance => InstanceLazy.Value;
+
+        // public static readonly GameManager Instance = new();
 
         private GameConfig _gameConfig;
+        private GameServiceReference<AddressableAssetService> _assetService;
+        private GameServiceReference<GameSceneService> _sceneService;
 
-        public Task LoadCommonObjectsTask { get; private set; }
+        public Task GameStartTask { get; private set; }
 
         private GameManager()
         {
@@ -30,8 +36,8 @@ namespace Game.Core
             AppQuitIfJailbreak();
             GameServiceManager.Instance.StartUp();
             GameServiceManager.Instance.AddService<MessageBrokerService>();
-            LoadCommonObjectsTask = LoadCommonObjectsAsync();
-            LoadCommonObjectsTask.Forget();
+            GameStartTask = GameStartAsync();
+            GameStartTask.Forget();
         }
 
         private void LoadConfig()
@@ -44,7 +50,7 @@ namespace Game.Core
         }
 
         /// <summary>
-        /// アプリ脱獄チェックして、黒なら強制終了
+        /// アプリ脱獄チェックして、強制終了
         /// </summary>
         private void AppQuitIfJailbreak()
         {
@@ -57,9 +63,10 @@ namespace Game.Core
             }
         }
 
-        private async Task LoadCommonObjectsAsync()
+        private async Task GameStartAsync()
         {
             await GameCommonObjects.LoadAssetAsync();
+            await _sceneService.Reference.TransitionAsync<GameTitleScene>();
         }
 
         public void GameReStart()

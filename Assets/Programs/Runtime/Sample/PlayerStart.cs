@@ -22,7 +22,7 @@ namespace Sample
             var player = Instantiate(playerPrefab, transform);
 
             // Memo: この辺、もう少しキレイにかけるはず...
-            await GameManager.Instance.LoadCommonObjectsTask;
+            await GameManager.Instance.GameStartTask;
             GameCommonObjects.Instance.SetPlayer(player);
 
             var enemies = GameObject.FindGameObjectsWithTag("Enemy");

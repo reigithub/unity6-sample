@@ -36,7 +36,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 250, y: -100}
+  m_AnchoredPosition: {x: 250, y: -200}
   m_SizeDelta: {x: 240, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &12926762
@@ -410,7 +410,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 250, y: -1.5}
+  m_AnchoredPosition: {x: 250, y: -100}
   m_SizeDelta: {x: 240, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1731260223284835346
@@ -507,8 +507,9 @@ GameObject:
   - component: {fileID: 1731260224382632494}
   - component: {fileID: 1731260224382632493}
   - component: {fileID: 1731260224382632492}
+  - component: {fileID: 6831218214259778908}
   m_Layer: 5
-  m_Name: UI_GameStart
+  m_Name: GameTitleScene
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -601,6 +602,20 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &6831218214259778908
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1731260224382632491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c60c50aa190f6704ab1768b6cf73aee3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameTitleSceneComponent
+  _startButton: {fileID: 1731260223284835344}
+  _quitButton: {fileID: 12926760}
 --- !u!1 &1731260224422429918
 GameObject:
   m_ObjectHideFlags: 0
@@ -693,8 +708,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_EffectColor: {r: 0, g: 0.18039227, b: 1, a: 0.5}
-  m_EffectDistance: {x: 5, y: 1}
+  m_EffectColor: {r: 0, g: 0.18039227, b: 1, a: 0.78431374}
+  m_EffectDistance: {x: 3, y: 3}
   m_UseGraphicAlpha: 1
 --- !u!1 &5813400625359131924
 GameObject:

@@ -39,7 +39,7 @@ namespace Game.Core
             }
         }
 
-        [SerializeField] private CameraController _cameraController;
+        [SerializeField] private PlayerFollowCameraController _playerFollowCameraController;
 
         [SerializeField] private TextMeshProUGUI _countText;
         [SerializeField] private TextMeshProUGUI _winText;
@@ -50,11 +50,6 @@ namespace Game.Core
         {
             var messageBrokerService = GameServiceManager.Instance.GetService<MessageBrokerService>();
             var globalMessageBroker = messageBrokerService.GlobalMessageBroker;
-            // globalMessageBroker.GetSubscriber<int, GameObject>()
-            //     .Subscribe(MessageKey.Player.SpawnPlayer, handler: player => { _cameraController.SetPlayer(player); })
-            //     .AddTo(this);
-
-            // _cameraController.enabled = false;
 
             _count = 0;
             SetCountText();
@@ -77,6 +72,7 @@ namespace Game.Core
 
         private void SetCountText()
         {
+            _countText.gameObject.SetActive(true);
             _countText.text = "Count: " + _count;
 
             bool isWin = _count >= 16;
@@ -86,7 +82,7 @@ namespace Game.Core
 
         public void SetPlayer(GameObject p)
         {
-            _cameraController.SetPlayer(p);
+            _playerFollowCameraController.SetPlayer(p);
         }
     }
 }

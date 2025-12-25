@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: Default Local Group
+  m_Name: Prefabs
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
-  m_GroupName: Default Local Group
-  m_GUID: ab956b5b82bfa614baabbac2e24e7add
+  m_GroupName: Prefabs
+  m_GUID: 2cd145404a5cc5c4c9bd67cefe02d650
   m_SerializeEntries:
-  - m_GUID: 4a5fd5309b0962d4d8e2c5c9281df12b
-    m_Address: Assets/Prefabs/GameTitleScene.prefab
+  - m_GUID: 37474fefc6ee42f4fabd30f28e8d5fc2
+    m_Address: Assets/Prefabs/Enemy_Box.prefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 54f6aae839de95a43bff005c63f48350
-    m_Address: Assets/Prefabs/GameCommonObjects.prefab
+  - m_GUID: 3a8d1e0bdbb954c4083cedaf437d6248
+    m_Address: Assets/Prefabs/Player_UnityChan.prefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -29,5 +29,5 @@ MonoBehaviour:
   m_Settings: {fileID: 11400000, guid: be8c7bfaed8f7eb428b95bd26a52c525, type: 2}
   m_SchemaSet:
     m_Schemas:
-    - {fileID: 11400000, guid: 165feddf67efd1f41b009a203be34d20, type: 2}
-    - {fileID: 11400000, guid: a70d6890d0436bd4f917c9d590781298, type: 2}
+    - {fileID: 11400000, guid: 2da12227ab4d5cf4198eb6b71aa0ad65, type: 2}
+    - {fileID: 11400000, guid: 51d50e91db431da4998a31b064d6c092, type: 2}

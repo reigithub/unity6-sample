@@ -1,14 +1,12 @@
 namespace Game.Core.Services
 {
+    /// <summary>
+    /// ゲームサービスへの参照
+    /// </summary>
+    /// <typeparam name="TService">サービス</typeparam>
     public struct GameServiceReference<TService>
         where TService : GameService, new()
     {
-        private TService _service;
-
-        public TService Service
-            => _service ??= GameServiceManager.Instance.GetService<TService>();
-
-        // public static implicit operator TService(GameServiceReference<TService> reference)
-        //     => reference.Service;
+        public TService Reference => GameServiceManager.Instance.GetService<TService>();
     }
 }
