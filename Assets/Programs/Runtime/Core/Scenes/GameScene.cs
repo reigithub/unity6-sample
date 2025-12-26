@@ -17,21 +17,37 @@ namespace Game.Core.Scenes
 
         protected abstract string AssetPathOrAddress { get; }
 
+        // アセット(主にこのシーン)をロード
+        protected internal virtual Task LoadAsset()
+        {
+            return Task.CompletedTask;
+        }
+
+        // サーバー通信など
+        protected internal virtual Task PreInitialize()
+        {
+            return Task.CompletedTask;
+        }
+
+        // シーンビュー初期化など
         protected internal virtual Task Initialize()
         {
             return Task.CompletedTask;
         }
 
-        protected internal virtual Task Start()
+        // シーン起動後に演出など
+        protected internal virtual Task PostInitialize()
         {
             return Task.CompletedTask;
         }
 
+        // シーンを終了させて破棄する
         protected internal virtual Task Terminate()
         {
             return Task.CompletedTask;
         }
 
+        // StateMachine回したくなった時(MonoBehaviour.Update)
         protected internal virtual void Update()
         {
         }
@@ -48,15 +64,15 @@ namespace Game.Core.Scenes
     {
         public TGameSceneComponent SceneComponent { get; protected set; }
 
-        protected internal override async Task Initialize()
+        protected internal override async Task LoadAsset()
         {
             await LoadScene();
             SceneComponent = GetSceneComponent();
         }
 
-        protected internal override Task Start()
+        protected internal override Task Initialize()
         {
-            return base.Start();
+            return base.Initialize();
         }
 
         protected internal override async Task Terminate()
@@ -86,7 +102,7 @@ namespace Game.Core.Scenes
         where TGameScene : GameScene<TGameScene, TGameSceneComponent>
         where TGameSceneComponent : GameSceneComponent
     {
-        private const string ParentUnitySceneName = "GameScene"; // プレハブを所属させる常駐UnitySceneName
+        private const string RootSceneName = "GameRootScene"; // プレハブを所属させる常駐UnitySceneName
 
         private GameObject _asset;
         private GameObject _instance;
@@ -96,7 +112,7 @@ namespace Game.Core.Scenes
             _asset = await AssetService.LoadAssetAsync<GameObject>(AssetPathOrAddress);
             _instance = GameObject.Instantiate(_asset);
 
-            var scene = SceneManager.GetSceneByName(ParentUnitySceneName);
+            var scene = SceneManager.GetSceneByName(RootSceneName);
             SceneManager.MoveGameObjectToScene(_instance, scene);
         }
 
@@ -131,7 +147,7 @@ namespace Game.Core.Scenes
 
         protected override async Task LoadScene()
         {
-            _instance = await AssetService.LoadSceneAsync(AssetPathOrAddress, LoadSceneMode);
+            _instance = await AssetService.LoadSceneAsync(AssetPathOrAddress, LoadSceneMode, activateOnLoad: true);
             // SceneManager.SetActiveScene(_instance.Scene);
         }
 
@@ -153,7 +169,7 @@ namespace Game.Core.Scenes
 
         private SceneInstance _instance;
 
-        protected internal override async Task Initialize()
+        protected internal override async Task LoadAsset()
         {
             await LoadScene();
         }
@@ -165,8 +181,8 @@ namespace Game.Core.Scenes
 
         protected virtual async Task LoadScene()
         {
-            _instance = await AssetService.LoadSceneAsync(AssetPathOrAddress, LoadSceneMode);
-            SceneManager.SetActiveScene(_instance.Scene);
+            _instance = await AssetService.LoadSceneAsync(AssetPathOrAddress, LoadSceneMode, activateOnLoad: true);
+            // SceneManager.SetActiveScene(_instance.Scene);
         }
 
         protected virtual async Task UnloadScene()

@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Game.Core;
 using Game.Core.Extensions;
 using Game.Core.Scenes;
 using Game.Core.Services;
@@ -19,22 +20,12 @@ namespace Sample
         {
             if (_startButton)
             {
-                _startButton.onClick.AddListener(() =>
-                {
-                    _sceneService.Reference.TransitionAsync<GameStageScene, string>("Assets/Scenes/UnityScenes/Stage00/Stage00.unity").Forget();
-                });
+                _startButton.onClick.AddListener(() => { _sceneService.Reference.TransitionAsync<GameStageScene, string>("Stage00").Forget(); });
             }
 
             if (_quitButton)
             {
-                _quitButton.onClick.AddListener(() =>
-                {
-#if UNITY_EDITOR
-                    UnityEditor.EditorApplication.ExitPlaymode();
-#else
-                    Application.Quit();
-#endif
-                });
+                _quitButton.onClick.AddListener(() => { GameManager.Instance.GameExit(); });
             }
 
             return Task.CompletedTask;

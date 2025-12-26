@@ -84,6 +84,12 @@ namespace Game.Core
         public void GameExit()
         {
             GameServiceManager.Instance.Shutdown();
+
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.ExitPlaymode();
+#else
+            Application.Quit();
+#endif
         }
     }
 }

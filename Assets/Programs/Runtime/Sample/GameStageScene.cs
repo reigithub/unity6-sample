@@ -17,9 +17,9 @@ namespace Sample
             return Task.CompletedTask;
         }
 
-        protected internal override async Task Initialize()
+        protected internal override async Task LoadAsset()
         {
-            await base.Initialize();
+            await base.LoadAsset();
 
             _stageSceneInstance = await AssetService.LoadSceneAsync(_stageName);
         }

@@ -6,8 +6,8 @@ using UnityEngine.SceneManagement;
 
 namespace Game.Core.Services
 {
-    public class GameSceneServiceBase<TGameSceneBase> : GameService
-        where TGameSceneBase : GameScene
+    public class GameSceneService<TGameScene> : GameService
+        where TGameScene : GameScene
     {
         private GameServiceReference<AddressableAssetService> _assetService;
         protected AddressableAssetService AssetService => _assetService.Reference;
@@ -18,7 +18,7 @@ namespace Game.Core.Services
     /// <summary>
     /// GameSceneの遷移挙動を制御するサービス
     /// </summary>
-    public partial class GameSceneService : GameSceneServiceBase<GameScene>
+    public partial class GameSceneService : GameSceneService<GameScene>
     {
         private readonly List<GameScene> _gameScenes = new();
         private readonly List<SceneInstance> _unityScenes = new();
@@ -31,8 +31,10 @@ namespace Game.Core.Services
             var gameScene = GameSceneHelper.CreateInstance(typeof(TGameScene));
             if (gameScene is not null)
             {
+                await gameScene.LoadAsset();
+                await gameScene.PreInitialize();
                 await gameScene.Initialize();
-                await gameScene.Start();
+                await gameScene.PostInitialize();
                 _gameScenes.Add(gameScene);
             }
         }
@@ -47,8 +49,10 @@ namespace Game.Core.Services
             {
                 await ((TGameScene)gameScene).PreInitialize(args);
 
+                await gameScene.LoadAsset();
+                await gameScene.PreInitialize();
                 await gameScene.Initialize();
-                await gameScene.Start();
+                await gameScene.PostInitialize();
                 _gameScenes.Add(gameScene);
             }
         }

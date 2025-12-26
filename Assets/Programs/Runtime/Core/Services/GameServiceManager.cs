@@ -9,8 +9,7 @@ namespace Game.Core.Services
 
         private readonly Dictionary<string, GameService> _gameServiceByName = new();
 
-        private int _nonResidentOnMemoryCount;
-        private const int NonResidentOnMemoryBuffer = 10;
+        private const int TransientOnMemoryBuffer = 10;
 
         private GameServiceManager()
         {
@@ -19,7 +18,6 @@ namespace Game.Core.Services
         private void Initialize()
         {
             _gameServiceByName.Clear();
-            _nonResidentOnMemoryCount = 0;
         }
 
         public void StartUp()
@@ -45,9 +43,6 @@ namespace Game.Core.Services
 
             service = new T();
             service.Startup();
-            if (!service.AllowResidentOnMemory)
-                _nonResidentOnMemoryCount++;
-
             _gameServiceByName.Add(name, service);
             return true;
         }
@@ -55,7 +50,7 @@ namespace Game.Core.Services
         public T GetService<T>()
             where T : GameService, new()
         {
-            ClearCacheIfNonResidentOnMemory();
+            ClearCacheIfTransientOnMemory();
             TryGetOrAddService<T>(out var service);
             return service;
         }
@@ -66,19 +61,18 @@ namespace Game.Core.Services
             TryGetOrAddService<T>(out _);
         }
 
-        private void ClearCacheIfNonResidentOnMemory()
+        private void ClearCacheIfTransientOnMemory()
         {
-            if (_nonResidentOnMemoryCount >= NonResidentOnMemoryBuffer)
+            var transientCount = _gameServiceByName.Values.Count(x => !x.AllowResidentOnMemory);
+            if (transientCount > TransientOnMemoryBuffer)
                 return;
 
-            var (name, service) = _gameServiceByName
-                .FirstOrDefault(x => !x.Value.AllowResidentOnMemory);
+            var (name, service) = _gameServiceByName.FirstOrDefault(x => !x.Value.AllowResidentOnMemory);
             if (service is null)
                 return;
 
             service.Shutdown();
             _gameServiceByName.Remove(name);
-            _nonResidentOnMemoryCount--;
         }
     }
 }

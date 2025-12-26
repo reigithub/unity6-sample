@@ -7,7 +7,7 @@ namespace Sample
     {
         protected override string AssetPathOrAddress => "Assets/Prefabs/GameTitleScene.prefab";
 
-        protected internal override async Task Start()
+        protected internal override async Task Initialize()
         {
             await SceneComponent.Initialize();
         }
