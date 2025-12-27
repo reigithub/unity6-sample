@@ -4,14 +4,14 @@ using UnityEngine.ResourceManagement.ResourceProviders;
 
 namespace Sample
 {
-    public class GameStageScene : GamePrefabScene<GameStageScene, GameStageSceneComponent>, IGameSceneArgs<string>
+    public class GameStageScene : GamePrefabScene<GameStageScene, GameStageSceneComponent>, IGameSceneArg<string>
     {
         protected override string AssetPathOrAddress => "Assets/Prefabs/GameStageScene.prefab";
 
         private string _stageName;
         private SceneInstance _stageSceneInstance;
 
-        public Task PreInitialize(string stageName)
+        public Task SetArg(string stageName)
         {
             _stageName = stageName;
             return Task.CompletedTask;

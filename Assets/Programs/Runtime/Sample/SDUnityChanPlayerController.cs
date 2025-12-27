@@ -77,6 +77,7 @@ namespace Sample
 
         private void Update()
         {
+            // 移動入力受付
             var moveValue = _player.Move.ReadValue<Vector2>();
             _moveVector = new Vector3(moveValue.x, 0.0f, moveValue.y).normalized;
 
@@ -93,6 +94,7 @@ namespace Sample
                 _lookRotation = Quaternion.LookRotation(_moveVector);
             }
 
+            // ジャンプ入力受付
             // 押した瞬間のみ検知
             if (!_jumpTriggered && _player.Jump.WasPressedThisFrame())
             {
@@ -117,7 +119,7 @@ namespace Sample
             // _rigidbody.AddForce(_moveVector * speed);
             // transform.Translate(moveVector * speed * Time.deltaTime, Space.World);
 
-            // 向き
+            // 移動方向への滑らかな回転
             _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, _lookRotation, _rotationRatio * Time.fixedDeltaTime));
 
             // var torque = transform.up * moveVector.x * moveVector.magnitude;
@@ -141,6 +143,7 @@ namespace Sample
 
                 if (IsGrounded())
                 {
+                    _animator.ResetTrigger(Animator.StringToHash("Jump"));
                     _jumpTriggered = false;
                 }
             }

@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Game.Core.Constants;
+using Cysharp.Threading.Tasks;
 using Game.Core.Extensions;
 using Game.Core.Services;
 using UnityEngine;
@@ -54,9 +54,24 @@ namespace Game.Core.Scenes
         }
     }
 
-    public interface IGameSceneArgs<TArgs>
+    public interface IGameSceneArg<TArg>
     {
-        public Task PreInitialize(TArgs args) => Task.CompletedTask;
+        public Task SetArg(TArg arg) => Task.CompletedTask;
+    }
+
+    public interface IGameSceneResult<TResult>
+    {
+        public UniTaskCompletionSource<TResult> ResultTcs { get; set; }
+
+        public bool TrySetResult(TResult result)
+        {
+            return ResultTcs?.TrySetResult(result) ?? false;
+        }
+
+        public bool TrySetCancelled()
+        {
+            return ResultTcs?.TrySetCanceled() ?? false;
+        }
     }
 
     public abstract class GameScene<TGameScene, TGameSceneComponent> : GameScene

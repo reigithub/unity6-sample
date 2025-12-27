@@ -42,6 +42,8 @@ namespace Game.Core
         [SerializeField] private GameObject _player;
         [SerializeField] private PlayerFollowCameraController _playerFollowCameraController;
 
+        [SerializeField] private GameUIController _gameUIController;
+
         [SerializeField] private TextMeshProUGUI _countText;
         [SerializeField] private TextMeshProUGUI _winText;
 
@@ -76,6 +78,8 @@ namespace Game.Core
                     if (isCollied) _winText.text = "You Lose...";
                 })
                 .AddTo(this);
+
+            _gameUIController.Initialize();
         }
 
         private void SetCountText()

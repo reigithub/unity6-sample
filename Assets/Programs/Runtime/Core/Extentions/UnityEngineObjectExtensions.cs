@@ -1,6 +1,6 @@
 namespace Game.Core.Extensions
 {
-    public static class UnityDataTypeExtensions
+    public static class UnityEngineObjectExtensions
     {
         public static void SafeDestroy(this UnityEngine.Object obj)
         {

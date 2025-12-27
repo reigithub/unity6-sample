@@ -536,7 +536,7 @@ GameObject:
   - component: {fileID: 6357061991636825651}
   - component: {fileID: 7486100627038033268}
   m_Layer: 5
-  m_Name: GameStatCanvas
+  m_Name: UICanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -636,6 +636,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7538165943794404469}
   - component: {fileID: 1196323003323977354}
+  - component: {fileID: 5449809067443127615}
   m_Layer: 0
   m_Name: GameCommonObjects
   m_TagString: Untagged
@@ -662,6 +663,7 @@ Transform:
   - {fileID: 2426907531698582610}
   - {fileID: 3332995909204367261}
   - {fileID: 3828436871333890860}
+  - {fileID: 2576688328605194808}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1196323003323977354
@@ -676,9 +678,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59478ef31649a4e43bebb937a37919b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameCommonObjects
+  _player: {fileID: 0}
   _playerFollowCameraController: {fileID: 5598932399200928302}
+  _gameUIController: {fileID: 5449809067443127615}
   _countText: {fileID: 6188733507752271187}
   _winText: {fileID: 5663710187754247706}
+--- !u!114 &5449809067443127615
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3310350827587476951}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10bc98215b121b740abd730b7ee51e7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sample.GameUIController
+  _gamePauseUI: {fileID: 3362895310524383590}
 --- !u!1 &4499381826427336989
 GameObject:
   m_ObjectHideFlags: 0
@@ -1022,3 +1039,120 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!1001 &4176461594458432902
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7538165943794404469}
+    m_Modifications:
+    - target: {fileID: 1889253254155075514, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_Name
+      value: GamePauseUI
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075514, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+--- !u!224 &2576688328605194808 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1889253254155075518, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+  m_PrefabInstance: {fileID: 4176461594458432902}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3362895310524383590 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1683962284308931808, guid: 558fb7bc29c3dfb4e961bdc80498d6a3, type: 3}
+  m_PrefabInstance: {fileID: 4176461594458432902}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a1e54b1277e87948bf01df95c75864e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sample.GamePauseUI

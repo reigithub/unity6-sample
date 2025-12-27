@@ -76,9 +76,10 @@ namespace Game.Core
 
         public void GameReStart()
         {
+            // _sceneService.Reference.TransitionAsync<GameTitleScene>().Forget();
         }
 
-        public void GameSuspend()
+        public void GamePause()
         {
         }
 
@@ -86,7 +87,7 @@ namespace Game.Core
         {
         }
 
-        public void GameExit()
+        public void GameQuit()
         {
             GameServiceManager.Instance.Shutdown();
 

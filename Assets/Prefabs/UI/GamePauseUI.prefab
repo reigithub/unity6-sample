@@ -212,8 +212,9 @@ GameObject:
   - component: {fileID: 1889253254155075519}
   - component: {fileID: 1889253254155075516}
   - component: {fileID: 1889253254155075517}
+  - component: {fileID: 1683962284308931808}
   m_Layer: 5
-  m_Name: UI_GamePause
+  m_Name: GamePauseUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -256,7 +257,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
+  m_VertexColorAlwaysGammaSpace: 1
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -277,7 +278,7 @@ MonoBehaviour:
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 1
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -302,6 +303,22 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &1683962284308931808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1889253254155075514}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a1e54b1277e87948bf01df95c75864e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sample.GamePauseUI
+  _resumeButton: {fileID: 1889253254648891777}
+  _retryButton: {fileID: 158001828011426489}
+  _returnButton: {fileID: 74054996790596068}
+  _quitButton: {fileID: 6751589016593273914}
 --- !u!1 &1889253254190643535
 GameObject:
   m_ObjectHideFlags: 0
@@ -394,8 +411,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_EffectColor: {r: 0, g: 0.18039227, b: 1, a: 0.5}
-  m_EffectDistance: {x: 5, y: 1}
+  m_EffectColor: {r: 0, g: 0.18039227, b: 1, a: 1}
+  m_EffectDistance: {x: 5, y: 2}
   m_UseGraphicAlpha: 1
 --- !u!1 &1889253254648891791
 GameObject:
@@ -788,7 +805,7 @@ MonoBehaviour:
     m_FontSize: 40
     m_FontStyle: 3
     m_BestFit: 0
-    m_MinSize: 4
+    m_MinSize: 3
     m_MaxSize: 50
     m_Alignment: 4
     m_AlignByGeometry: 0

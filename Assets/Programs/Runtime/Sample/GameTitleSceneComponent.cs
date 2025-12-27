@@ -24,7 +24,7 @@ namespace Sample
 
             if (_quitButton)
             {
-                _quitButton.onClick.AddListener(() => { GameManager.Instance.GameExit(); });
+                _quitButton.onClick.AddListener(() => { GameManager.Instance.GameQuit(); });
             }
         }
     }
