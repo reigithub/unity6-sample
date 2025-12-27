@@ -20,14 +20,18 @@ namespace Sample
         protected internal override async Task LoadAsset()
         {
             await base.LoadAsset();
-
             _stageSceneInstance = await AssetService.LoadSceneAsync(_stageName);
+        }
+
+        protected internal override async Task Initialize()
+        {
+            var playerStart = GameSceneHelper.GetPlayerStart(_stageSceneInstance.Scene);
+            await SceneComponent.Initialize(playerStart);
         }
 
         protected internal override async Task Terminate()
         {
             await base.Terminate();
-
             await AssetService.UnloadSceneAsync(_stageSceneInstance);
         }
     }

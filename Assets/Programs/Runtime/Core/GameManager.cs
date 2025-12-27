@@ -1,9 +1,11 @@
 using System;
 using System.Threading.Tasks;
+using Game.Core.Constants;
 using Game.Core.Extensions;
 using UnityEngine;
 using Game.Core.Services;
 using Sample;
+using UnityEngine.SceneManagement;
 
 namespace Game.Core
 {
@@ -18,8 +20,6 @@ namespace Game.Core
         private GameServiceReference<AddressableAssetService> _assetService;
         private GameServiceReference<GameSceneService> _sceneService;
 
-        public Task GameStartTask { get; private set; }
-
         private GameManager()
         {
         }
@@ -32,12 +32,17 @@ namespace Game.Core
 
         private void GameStart()
         {
+#if UNITY_EDITOR
+            var scene = SceneManager.GetActiveScene();
+            if (scene.name != GameSceneConstants.GameRootScene)
+                return;
+#endif
+
             LoadConfig();
             AppQuitIfJailbreak();
             GameServiceManager.Instance.StartUp();
             GameServiceManager.Instance.AddService<MessageBrokerService>();
-            GameStartTask = GameStartAsync();
-            GameStartTask.Forget();
+            GameStartAsync().Forget();
         }
 
         private void LoadConfig()

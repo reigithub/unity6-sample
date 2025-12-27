@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Game.Core.Constants;
+using Sample;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -24,6 +25,23 @@ namespace Game.Core.Scenes
             }
         }
 
+        public static void MoveToGameRootScene(GameObject scene)
+        {
+            var activeScene = SceneManager.GetActiveScene();
+            if (activeScene.IsValid() && activeScene.name == GameSceneConstants.GameRootScene)
+            {
+                SceneManager.MoveGameObjectToScene(scene, activeScene);
+            }
+            else
+            {
+                var rootScene = SceneManager.GetSceneByName(GameSceneConstants.GameRootScene);
+                if (rootScene.IsValid())
+                {
+                    SceneManager.MoveGameObjectToScene(scene, rootScene);
+                }
+            }
+        }
+
         public static T GetSceneComponent<T>(GameObject scene) where T : GameSceneComponent
         {
             if (scene.TryGetComponent<T>(out var sceneComponent))
@@ -41,17 +59,37 @@ namespace Game.Core.Scenes
 
         public static T GetRootComponent<T>(Scene scene) where T : MonoBehaviour
         {
-            var gameObjectList = new List<GameObject>();
-            scene.GetRootGameObjects(gameObjectList);
+            var rootGameObjects = scene.GetRootGameObjects();
 
             T component = null;
-            foreach (var obj in gameObjectList)
+            foreach (var obj in rootGameObjects)
             {
                 if (obj.TryGetComponent<T>(out component))
                     break;
             }
 
-            gameObjectList.Clear();
+            return component;
+        }
+
+        public static PlayerStart GetPlayerStart(Scene scene)
+        {
+            return GetComponentInChildren<PlayerStart>(scene);
+        }
+
+        public static T GetComponentInChildren<T>(Scene scene) where T : MonoBehaviour
+        {
+            var rootGameObjects = scene.GetRootGameObjects();
+
+            T component = null;
+            foreach (var obj in rootGameObjects)
+            {
+                if (obj.TryGetComponent<T>(out component))
+                    break;
+
+                component = obj.GetComponentInChildren<T>();
+                if (component != null)
+                    break;
+            }
 
             return component;
         }

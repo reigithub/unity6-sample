@@ -39,29 +39,37 @@ namespace Game.Core
             }
         }
 
+        [SerializeField] private GameObject _player;
         [SerializeField] private PlayerFollowCameraController _playerFollowCameraController;
 
         [SerializeField] private TextMeshProUGUI _countText;
         [SerializeField] private TextMeshProUGUI _winText;
 
+        private GameServiceReference<MessageBrokerService> _messageBrokerService;
+        private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
+
         private int _count;
 
         private void Initialize()
         {
-            var messageBrokerService = GameServiceManager.Instance.GetService<MessageBrokerService>();
-            var globalMessageBroker = messageBrokerService.GlobalMessageBroker;
-
             _count = 0;
             SetCountText();
 
-            globalMessageBroker.GetSubscriber<int, int>()
+            GlobalMessageBroker.GetSubscriber<int, GameObject>()
+                .Subscribe(MessageKey.Player.SpawnPlayer, handler: player =>
+                {
+                    _player = player;
+                    _playerFollowCameraController.SetPlayer(player);
+                })
+                .AddTo(this);
+            GlobalMessageBroker.GetSubscriber<int, int>()
                 .Subscribe(MessageKey.Sample.AddScore, handler: score =>
                 {
                     _count += score;
                     SetCountText();
                 })
                 .AddTo(this);
-            globalMessageBroker.GetSubscriber<int, bool>()
+            GlobalMessageBroker.GetSubscriber<int, bool>()
                 .Subscribe(MessageKey.Sample.EnemyCollied, handler: isCollied =>
                 {
                     _winText.gameObject.SetActive(isCollied);
@@ -78,11 +86,6 @@ namespace Game.Core
             bool isWin = _count >= 16;
             _winText.gameObject.SetActive(isWin);
             if (isWin) _winText.text = "You Win!!";
-        }
-
-        public void SetPlayer(GameObject p)
-        {
-            _playerFollowCameraController.SetPlayer(p);
         }
     }
 }

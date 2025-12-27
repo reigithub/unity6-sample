@@ -26,6 +26,7 @@ namespace Game.Core.Services
         public async Task TransitionAsync<TGameScene>()
             where TGameScene : GameScene
         {
+            // Memo: いずれ履歴を持って、一つ前のシーンへ戻れるようにする？
             await TerminateAllAsync();
 
             var gameScene = GameSceneHelper.CreateInstance(typeof(TGameScene));

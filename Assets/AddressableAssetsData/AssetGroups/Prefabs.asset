@@ -21,7 +21,7 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3a8d1e0bdbb954c4083cedaf437d6248
-    m_Address: Assets/Prefabs/Player_UnityChan.prefab
+    m_Address: Assets/Prefabs/Player_SDUnityChan.prefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

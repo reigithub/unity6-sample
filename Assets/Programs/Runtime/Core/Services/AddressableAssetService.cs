@@ -19,6 +19,11 @@ namespace Game.Core.Services
             return await Addressables.LoadAssetAsync<T>(address);
         }
 
+        public async Task<GameObject> InstantiateAsync(string address, Transform parent = null)
+        {
+            return await Addressables.InstantiateAsync(address, parent);
+        }
+
         public async Task<SceneInstance> LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Additive, bool activateOnLoad = true)
         {
             return await Addressables.LoadSceneAsync(sceneName, loadSceneMode, activateOnLoad);

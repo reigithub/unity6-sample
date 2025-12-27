@@ -176,6 +176,15 @@ namespace UnityChan
                     ""initialStateCheck"": false
                 },
                 {
+                    ""name"": ""LeftShift"",
+                    ""type"": ""Button"",
+                    ""id"": ""3889c0f5-f74e-49f0-ae22-c8ad39263328"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
                     ""name"": ""MouseScrollY"",
                     ""type"": ""Value"",
                     ""id"": ""f1556d77-9ec6-414d-8be0-1cf3947e096b"",
@@ -502,6 +511,17 @@ namespace UnityChan
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""MouseScrollY"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1f2254b4-773e-4a17-a79d-4422a2312ac6"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""LeftShift"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1098,6 +1118,7 @@ namespace UnityChan
             m_Player_Reset = m_Player.FindAction("Reset", throwIfNotFound: true);
             m_Player_LeftAlt = m_Player.FindAction("LeftAlt", throwIfNotFound: true);
             m_Player_LeftControl = m_Player.FindAction("LeftControl", throwIfNotFound: true);
+            m_Player_LeftShift = m_Player.FindAction("LeftShift", throwIfNotFound: true);
             m_Player_MouseScrollY = m_Player.FindAction("MouseScrollY", throwIfNotFound: true);
             // UI
             m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
@@ -1201,6 +1222,7 @@ namespace UnityChan
         private readonly InputAction m_Player_Reset;
         private readonly InputAction m_Player_LeftAlt;
         private readonly InputAction m_Player_LeftControl;
+        private readonly InputAction m_Player_LeftShift;
         private readonly InputAction m_Player_MouseScrollY;
         /// <summary>
         /// Provides access to input actions defined in input action map "Player".
@@ -1249,6 +1271,10 @@ namespace UnityChan
             /// Provides access to the underlying input action "Player/LeftControl".
             /// </summary>
             public InputAction @LeftControl => m_Wrapper.m_Player_LeftControl;
+            /// <summary>
+            /// Provides access to the underlying input action "Player/LeftShift".
+            /// </summary>
+            public InputAction @LeftShift => m_Wrapper.m_Player_LeftShift;
             /// <summary>
             /// Provides access to the underlying input action "Player/MouseScrollY".
             /// </summary>
@@ -1306,6 +1332,9 @@ namespace UnityChan
                 @LeftControl.started += instance.OnLeftControl;
                 @LeftControl.performed += instance.OnLeftControl;
                 @LeftControl.canceled += instance.OnLeftControl;
+                @LeftShift.started += instance.OnLeftShift;
+                @LeftShift.performed += instance.OnLeftShift;
+                @LeftShift.canceled += instance.OnLeftShift;
                 @MouseScrollY.started += instance.OnMouseScrollY;
                 @MouseScrollY.performed += instance.OnMouseScrollY;
                 @MouseScrollY.canceled += instance.OnMouseScrollY;
@@ -1347,6 +1376,9 @@ namespace UnityChan
                 @LeftControl.started -= instance.OnLeftControl;
                 @LeftControl.performed -= instance.OnLeftControl;
                 @LeftControl.canceled -= instance.OnLeftControl;
+                @LeftShift.started -= instance.OnLeftShift;
+                @LeftShift.performed -= instance.OnLeftShift;
+                @LeftShift.canceled -= instance.OnLeftShift;
                 @MouseScrollY.started -= instance.OnMouseScrollY;
                 @MouseScrollY.performed -= instance.OnMouseScrollY;
                 @MouseScrollY.canceled -= instance.OnMouseScrollY;
@@ -1713,6 +1745,13 @@ namespace UnityChan
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnLeftControl(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "LeftShift" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnLeftShift(InputAction.CallbackContext context);
             /// <summary>
             /// Method invoked when associated input action "MouseScrollY" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
             /// </summary>

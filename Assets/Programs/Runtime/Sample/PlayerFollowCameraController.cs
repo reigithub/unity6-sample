@@ -9,16 +9,6 @@ namespace Sample
 
         private bool _initialized;
 
-        private void Start()
-        {
-            Initialize();
-        }
-
-        private void LateUpdate()
-        {
-            Initialize();
-        }
-
         private void Initialize()
         {
             if (_initialized) return;
@@ -36,6 +26,7 @@ namespace Sample
         public void SetPlayer(GameObject player)
         {
             _player = player;
+            Initialize();
         }
     }
 }

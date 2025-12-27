@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Game.Core.Constants;
 using Game.Core.Extensions;
 using Game.Core.Services;
 using UnityEngine;
@@ -102,8 +103,6 @@ namespace Game.Core.Scenes
         where TGameScene : GameScene<TGameScene, TGameSceneComponent>
         where TGameSceneComponent : GameSceneComponent
     {
-        private const string RootSceneName = "GameRootScene"; // プレハブを所属させる常駐UnitySceneName
-
         private GameObject _asset;
         private GameObject _instance;
 
@@ -111,9 +110,7 @@ namespace Game.Core.Scenes
         {
             _asset = await AssetService.LoadAssetAsync<GameObject>(AssetPathOrAddress);
             _instance = GameObject.Instantiate(_asset);
-
-            var scene = SceneManager.GetSceneByName(RootSceneName);
-            SceneManager.MoveGameObjectToScene(_instance, scene);
+            GameSceneHelper.MoveToGameRootScene(_instance);
         }
 
         protected override Task UnloadScene()

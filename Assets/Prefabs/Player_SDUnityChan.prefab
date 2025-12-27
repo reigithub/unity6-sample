@@ -52,6 +52,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9500000, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: f3aab8c3758bee04082c41244026970e, type: 2}
+    - target: {fileID: 9500000, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: m_AnimatePhysics
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9500000, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 11400000, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -59,6 +71,38 @@ PrefabInstance:
     - target: {fileID: 11400002, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400002, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: m_bodyStateNames.Array.size
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400002, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: 'm_bodyStateNames.Array.data[0]'
+      value: GoDown
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400002, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: 'm_bodyStateNames.Array.data[1]'
+      value: DownToUp
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400002, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: 'm_bodyStateNames.Array.data[2]'
+      value: KneelDown
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400002, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: 'm_bodyStateNames.Array.data[3]'
+      value: KneelDownToUp
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400002, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: 'm_bodyStateNames.Array.data[4]'
+      value: Salute
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400002, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: 'm_bodyStateNames.Array.data[5]'
+      value: Damaged
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400002, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: 'm_bodyStateNames.Array.data[6]'
+      value: Jumping
       objectReference: {fileID: 0}
     - target: {fileID: 11400088, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
       propertyPath: m_showUI
@@ -84,6 +128,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 100264, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6405482258116250087}
+    - targetCorrespondingSourceObject: {fileID: 100264, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 940329941831407570}
   m_SourcePrefab: {fileID: 100100000, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
 --- !u!1 &322825930273064360 stripped
 GameObject:
@@ -103,7 +150,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
   m_Actions: {fileID: -944628639613478452, guid: 577a9d3b97e66d84c9bb35e58b05590d, type: 3}
-  m_NotificationBehavior: 0
+  m_NotificationBehavior: 2
   m_UIInputModule: {fileID: 0}
   m_DeviceLostEvent:
     m_PersistentCalls:
@@ -132,7 +179,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71720a89ea0cc38418b6d01b89efcb66, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Sample.SDUnityChanController
-  _speed: 5
+  _walkSpeed: 2
+  _runSpeed: 5
+  _rotationSpeed: 10
+  _jumpPower: 5
 --- !u!54 &8852584683181521213
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -157,9 +207,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 80
-  m_CollisionDetection: 0
+  m_Interpolate: 1
+  m_Constraints: 112
+  m_CollisionDetection: 2
 --- !u!136 &6405482258116250087
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -183,3 +233,21 @@ CapsuleCollider:
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0.5, z: 0}
+--- !u!114 &940329941831407570
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 322825930273064360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47a722030a4c2ed4eb327af2d8ee05c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sample.RaycastChecker
+  _layerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  _positionOffset: {x: 0, y: 0.1, z: 0}
+  _direction: {x: 0, y: -1, z: 0}
+  _distance: 0.35

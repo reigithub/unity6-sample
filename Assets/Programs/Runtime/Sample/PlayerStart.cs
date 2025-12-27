@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using Game.Core;
+using Game.Core.MessagePipe;
 using Game.Core.Services;
 using UnityEngine;
 
@@ -10,20 +11,15 @@ namespace Sample
     /// </summary>
     public class PlayerStart : MonoBehaviour
     {
-        private void OnEnable()
-        {
-            LoadPlayerAsync().Forget();
-        }
+        private GameServiceReference<MessageBrokerService> _messageBrokerService;
+        private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
 
-        private async UniTask LoadPlayerAsync()
+        public async UniTask LoadPlayerAsync()
         {
             var assetService = GameServiceManager.Instance.GetService<AddressableAssetService>();
-            var playerPrefab = await assetService.LoadAssetAsync<GameObject>("Assets/Prefabs/Player_UnityChan.prefab");
-            var player = Instantiate(playerPrefab, transform);
+            var player = await assetService.InstantiateAsync("Assets/Prefabs/Player_SDUnityChan.prefab", transform);
 
             // Memo: この辺、もう少しキレイにかけるはず...
-            await GameManager.Instance.GameStartTask;
-            GameCommonObjects.Instance.SetPlayer(player);
 
             var enemies = GameObject.FindGameObjectsWithTag("Enemy");
             foreach (var enemy in enemies)
@@ -34,10 +30,8 @@ namespace Sample
                 }
             }
 
-            // var messageBrokerService = GameServiceManager.Instance.GetService<MessageBrokerService>();
-            // var globalMessageBroker = messageBrokerService.GlobalMessageBroker;
-            // var publisher = globalMessageBroker.GetPublisher<int, GameObject>();
-            // publisher.Publish(MessageKey.Player.SpawnPlayer, player);
+            GlobalMessageBroker.GetPublisher<int, GameObject>()
+                .Publish(MessageKey.Player.SpawnPlayer, player);
         }
     }
 }

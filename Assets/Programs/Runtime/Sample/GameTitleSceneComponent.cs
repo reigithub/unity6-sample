@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Game.Core;
 using Game.Core.Extensions;
 using Game.Core.Scenes;
@@ -16,7 +15,7 @@ namespace Sample
         private GameServiceReference<AddressableAssetService> _assetService;
         private GameServiceReference<GameSceneService> _sceneService;
 
-        public override Task Initialize()
+        public void Initialize()
         {
             if (_startButton)
             {
@@ -27,8 +26,6 @@ namespace Sample
             {
                 _quitButton.onClick.AddListener(() => { GameManager.Instance.GameExit(); });
             }
-
-            return Task.CompletedTask;
         }
     }
 }

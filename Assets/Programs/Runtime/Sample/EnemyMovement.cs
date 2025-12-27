@@ -31,9 +31,11 @@ namespace Sample
             }
         }
 
-        public void SetPlayer(GameObject p)
+        public void SetPlayer(GameObject player)
         {
-            _player = p.transform;
+            _player = player.transform;
         }
+
+        // TODO: StateMachineでプレイヤー探索～追尾～ロスト～配置に戻るを表現する
     }
 }
