@@ -8,14 +8,6 @@
             public const int Game = 100;
             public const int GameScene = 200;
             public const int Player = 500;
-
-            public const int Sample = 90000;
-        }
-
-        public struct Sample
-        {
-            public const int AddScore = Offset.Sample + 0;
-            public const int EnemyCollied = Offset.Sample + 1;
         }
 
         public struct Game
@@ -36,6 +28,8 @@
         public struct Player
         {
             public const int SpawnPlayer = Offset.Player + 0;
+            public const int AddScore = Offset.Player + 1;
+            public const int EnemyCollied = Offset.Player + 2;
         }
     }
 }

@@ -7,26 +7,17 @@ namespace Game.Contents.Player
     {
         [SerializeField] private GameObject _player;
 
-        private bool _initialized;
-
-        private void Initialize()
+        public void SetPlayer(GameObject player)
         {
-            if (_initialized) return;
+            _player = player;
 
             if (_player)
             {
                 if (gameObject.TryGetComponent<CinemachineCamera>(out var cinemachineCamera))
                 {
                     cinemachineCamera.Target.TrackingTarget = _player.transform;
-                    _initialized = true;
                 }
             }
-        }
-
-        public void SetPlayer(GameObject player)
-        {
-            _player = player;
-            Initialize();
         }
     }
 }

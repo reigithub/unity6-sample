@@ -42,7 +42,7 @@ namespace Game.Core
             }
         }
 
-        [SerializeField] private GameObject _player;
+        [SerializeField] private GameObject _mainCamera;
         [SerializeField] private PlayerFollowCameraController _playerFollowCameraController;
 
         [SerializeField] private GameUIController _gameUIController;
@@ -62,20 +62,24 @@ namespace Game.Core
             GlobalMessageBroker.GetSubscriber<int, GameObject>()
                 .Subscribe(MessageKey.Player.SpawnPlayer, handler: player =>
                 {
-                    _player = player;
+                    if (player.TryGetComponent<SDUnityChanPlayerController>(out var controller))
+                    {
+                        controller.SetMainCamera(_mainCamera.transform);
+                    }
+
                     _playerFollowCameraController.SetPlayer(player);
                 })
                 .AddTo(this);
 
             GlobalMessageBroker.GetSubscriber<int, int>()
-                .Subscribe(MessageKey.Sample.AddScore, handler: score =>
+                .Subscribe(MessageKey.Player.AddScore, handler: score =>
                 {
                     _count += score;
                     SetCountText();
                 })
                 .AddTo(this);
             GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.Sample.EnemyCollied, handler: isCollied =>
+                .Subscribe(MessageKey.Player.EnemyCollied, handler: isCollied =>
                 {
                     _winText.gameObject.SetActive(isCollied);
                     if (isCollied) _winText.text = "You Lose...";

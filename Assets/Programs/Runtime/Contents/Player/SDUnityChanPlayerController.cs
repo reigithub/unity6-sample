@@ -37,10 +37,17 @@ namespace Game.Contents.Player
         private Rigidbody _rigidbody;
         private RaycastChecker _groundedRaycastChecker;
 
+        private Transform _mainCamera;
+        private Vector2 _moveValue = Vector2.zero;
         private Vector3 _moveVector = Vector3.zero;
         private float _speed;
         private Quaternion _lookRotation = Quaternion.identity;
         private bool _jumpTriggered;
+
+        public void SetMainCamera(Transform mainCamera)
+        {
+            _mainCamera = mainCamera;
+        }
 
         private void Awake()
         {
@@ -76,18 +83,20 @@ namespace Game.Contents.Player
         private void Update()
         {
             // 移動入力受付
-            var moveValue = _player.Move.ReadValue<Vector2>();
-            _moveVector = new Vector3(moveValue.x, 0.0f, moveValue.y).normalized;
+            _moveValue = _player.Move.ReadValue<Vector2>();
+            _moveVector = new Vector3(_moveValue.x, 0.0f, _moveValue.y).normalized;
 
+            // 移動速度更新
             _speed = _moveVector.magnitude;
-            if (_speed > 0f)
+            if (_speed > 0.1f)
             {
                 _speed *= _player.LeftShift.IsPressed() ? _walkSpeed : _runSpeed;
             }
 
             _animator.SetFloat(Animator.StringToHash("Speed"), _speed);
 
-            if (_moveVector.magnitude > 0.1f)
+            // 回転入力受付
+            if (_moveValue.magnitude > 0.1f)
             {
                 _lookRotation = Quaternion.LookRotation(_moveVector);
             }
@@ -112,13 +121,34 @@ namespace Game.Contents.Player
 
         private void Move()
         {
+            // カメラの向きに合わせる
+            if (_mainCamera)
+            {
+                if (_moveValue.magnitude > 0.1f)
+                {
+                    var forward = _mainCamera.forward; // Z軸
+                    var right = _mainCamera.right;     // X軸
+                    forward.y = 0f;
+                    right.y = 0f;
+
+                    // 移動方向更新
+                    _moveVector = forward * _moveValue.y + right * _moveValue.x;
+
+                    // 回転方向更新
+                    _lookRotation = Quaternion.LookRotation(_moveVector);
+                }
+            }
+
             // 移動
             _rigidbody.MovePosition(_rigidbody.position + _moveVector * _speed * Time.fixedDeltaTime);
             // _rigidbody.AddForce(_moveVector * speed);
             // transform.Translate(moveVector * speed * Time.deltaTime, Space.World);
 
-            // 移動方向への滑らかな回転
-            _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, _lookRotation, _rotationRatio * Time.fixedDeltaTime));
+            // 移動方向への滑らかな回転（入力中のみ回転する）
+            if (_moveValue.magnitude > 0.1f)
+            {
+                _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, _lookRotation, _rotationRatio * Time.fixedDeltaTime));
+            }
 
             // var torque = transform.up * moveVector.x * moveVector.magnitude;
             // _rigidbody.AddTorque(torque, ForceMode.Acceleration);
@@ -158,7 +188,7 @@ namespace Game.Contents.Player
             {
                 other.gameObject.SetActive(false);
 
-                GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Sample.EnemyCollied, true);
+                GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Player.EnemyCollied, true);
             }
         }
 
@@ -168,7 +198,7 @@ namespace Game.Contents.Player
             {
                 other.gameObject.SetActive(false);
 
-                GlobalMessageBroker.GetPublisher<int, int>().Publish(MessageKey.Sample.AddScore, 1);
+                GlobalMessageBroker.GetPublisher<int, int>().Publish(MessageKey.Player.AddScore, 1);
             }
         }
 

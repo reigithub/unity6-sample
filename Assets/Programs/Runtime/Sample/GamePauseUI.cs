@@ -24,12 +24,16 @@ namespace Sample
         public override Task Startup()
         {
             Time.timeScale = 0f;
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
             return base.Startup();
         }
 
         public override Task Terminate()
         {
             Time.timeScale = 1f;
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
             return base.Terminate();
         }
     }

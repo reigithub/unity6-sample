@@ -59,8 +59,6 @@ namespace Sample
             if (_ui.Pause.WasPressedThisFrame())
             {
                 GamePauseUIDialog.RunAsync();
-                // _pause = !_pause;
-                // _gamePauseUI.SetActive(_pause);
             }
         }
 
