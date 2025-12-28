@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Game.Core.Scenes;
+using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 
@@ -25,83 +28,98 @@ namespace Game.Core.Services
         // 2.現在シーンをスリープさせて、次のシーンを表示する処理
         // 3.ダイアログ用のオーバーレイ表示
         // 4.マルチ解像度対応（いずれどこかで）
-        private readonly List<GameScene> _gameScenes = new();
+        private readonly List<(Type type, IGameScene gameScene)> _gameScenes = new();
         private readonly List<SceneInstance> _unityScenes = new();
 
         public async Task TransitionAsync<TScene>()
-            where TScene : GameScene
+            where TScene : IGameScene, new()
         {
             await TerminateAllAsync();
 
-            var gameScene = GameSceneHelper.CreateInstance(typeof(TScene));
-            if (gameScene is not null)
-            {
-                await TransitionCore(gameScene);
-                _gameScenes.Add(gameScene);
-            }
+            var gameScene = new TScene();
+            await TransitionCore(gameScene);
+            _gameScenes.Add((typeof(TScene), gameScene));
         }
 
         public async Task TransitionAsync<TScene, TArg>(TArg arg)
-            where TScene : GameScene, IGameSceneArg<TArg>
+            where TScene : IGameScene, IGameSceneArg<TArg>, new()
         {
             await TerminateAllAsync();
 
-            var gameScene = GameSceneHelper.CreateInstance(typeof(TScene));
-            if (gameScene is not null)
-            {
-                await ((TScene)gameScene).SetArg(arg);
-
-                await TransitionCore(gameScene);
-                _gameScenes.Add(gameScene);
-            }
+            var gameScene = new TScene();
+            await gameScene.PreInitialize(arg);
+            await TransitionCore(gameScene);
+            _gameScenes.Add((typeof(TScene), gameScene));
         }
 
         public async Task<TResult> TransitionAsync<TScene, TResult>()
-            where TScene : GameScene, IGameSceneResult<TResult>
+            where TScene : IGameScene, IGameSceneResult<TResult>, new()
         {
-            var gameScene = GameSceneHelper.CreateInstance(typeof(TScene));
-            if (gameScene is not null)
-            {
-                var tcs = ((TScene)gameScene).ResultTcs = new UniTaskCompletionSource<TResult>();
+            var gameScene = new TScene();
+            var tcs = gameScene.ResultTcs = new UniTaskCompletionSource<TResult>();
 
-                await TransitionCore(gameScene);
-                _gameScenes.Add(gameScene);
+            await TransitionCore(gameScene);
+            _gameScenes.Add((typeof(TScene), gameScene));
 
-                return await tcs.Task;
-            }
-
-            return default;
+            return await tcs.Task;
         }
 
         public async Task<TResult> TransitionAsync<TScene, TArg, TResult>(TArg arg)
-            where TScene : GameScene, IGameSceneArg<TArg>, IGameSceneResult<TResult>
+            where TScene : IGameScene, IGameSceneArg<TArg>, IGameSceneResult<TResult>, new()
         {
-            var gameScene = GameSceneHelper.CreateInstance(typeof(TScene));
-            if (gameScene is not null)
-            {
-                await ((TScene)gameScene).SetArg(arg);
-                var tcs = ((TScene)gameScene).ResultTcs = new UniTaskCompletionSource<TResult>();
+            var gameScene = new TScene();
+            await gameScene.PreInitialize(arg);
+            var tcs = gameScene.ResultTcs = new UniTaskCompletionSource<TResult>();
 
-                await TransitionCore(gameScene);
-                _gameScenes.Add(gameScene);
+            await TransitionCore(gameScene);
+            _gameScenes.Add((typeof(TScene), gameScene));
 
-                return await tcs.Task;
-            }
-
-            return default;
+            return await tcs.Task;
         }
 
-        private async Task TransitionCore(GameScene gameScene)
+
+        public async Task<TResult> TransitionDialogAsync<TScene, TComponent, TResult>(Func<TScene, TComponent, Task> initializer = null)
+            where TScene : GameScene<TScene, TComponent>, IGameSceneInitializer<TScene, TComponent>, IGameSceneResult<TResult>, new()
+            where TComponent : GameSceneComponent
+        {
+            if (await TerminateAsync(typeof(TScene)))
+                return default;
+
+            // WARN: MonoBehaviourをnewしない方向で
+            var gameScene = new TScene();
+            gameScene.Scene = gameScene;
+            gameScene.Initializer = initializer;
+            var tcs = gameScene.ResultTcs = new UniTaskCompletionSource<TResult>();
+            await TransitionCore(gameScene);
+            _gameScenes.Add((typeof(TScene), gameScene));
+
+            return await tcs.Task;
+        }
+
+        private async Task TransitionCore(IGameScene gameScene)
         {
             await gameScene.LoadAsset();
             await gameScene.PreInitialize();
-            await gameScene.Initialize();
-            await gameScene.PostInitialize();
+            await gameScene.Startup();
+            await gameScene.OnReady();
+        }
+
+        public async Task<bool> TerminateAsync(Type sceneType)
+        {
+            var target = _gameScenes.LastOrDefault(x => x.type == sceneType);
+            if (target.type != null)
+            {
+                await target.gameScene.Terminate();
+                _gameScenes.Remove(target);
+                return true;
+            }
+
+            return false;
         }
 
         private async Task TerminateAllAsync()
         {
-            foreach (var s in _gameScenes)
+            foreach (var (_, s) in _gameScenes)
             {
                 await s.Terminate();
             }

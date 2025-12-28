@@ -25,6 +25,22 @@ namespace Game.Core.Scenes
             }
         }
 
+        public static TScene CreateInstance<TScene>()
+        {
+            try
+            {
+                var scene = Activator.CreateInstance(typeof(TScene));
+                if (scene is TScene t) return t;
+                return default;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                Debug.Assert(true, $"{typeof(TScene)}\n{e.Message}");
+                return default;
+            }
+        }
+
         public static void MoveToGameRootScene(GameObject scene)
         {
             var activeScene = SceneManager.GetActiveScene();
@@ -42,7 +58,7 @@ namespace Game.Core.Scenes
             }
         }
 
-        public static T GetSceneComponent<T>(GameObject scene) where T : GameSceneComponent
+        public static T GetSceneComponent<T>(GameObject scene) where T : MonoBehaviour
         {
             if (scene.TryGetComponent<T>(out var sceneComponent))
             {
@@ -52,7 +68,7 @@ namespace Game.Core.Scenes
             return scene.GetComponentInChildren<T>();
         }
 
-        public static T GetSceneComponent<T>(Scene scene) where T : GameSceneComponent
+        public static T GetSceneComponent<T>(Scene scene) where T : MonoBehaviour
         {
             return GetRootComponent<T>(scene);
         }

@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Game.Core.Scenes;
+using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
 
 namespace Sample
@@ -11,25 +12,26 @@ namespace Sample
         private string _stageName;
         private SceneInstance _stageSceneInstance;
 
-        public Task SetArg(string stageName)
+        public Task PreInitialize(string stageName)
         {
             _stageName = stageName;
             return Task.CompletedTask;
         }
 
-        protected internal override async Task LoadAsset()
+        public override async Task<GameObject> LoadAsset()
         {
-            await base.LoadAsset();
+            var instance = await base.LoadAsset();
             _stageSceneInstance = await AssetService.LoadSceneAsync(_stageName);
+            return instance;
         }
 
-        protected internal override async Task Initialize()
+        public override async Task Startup()
         {
             var playerStart = GameSceneHelper.GetPlayerStart(_stageSceneInstance.Scene);
             await SceneComponent.Initialize(playerStart);
         }
 
-        protected internal override async Task Terminate()
+        public override async Task Terminate()
         {
             await base.Terminate();
             await AssetService.UnloadSceneAsync(_stageSceneInstance);

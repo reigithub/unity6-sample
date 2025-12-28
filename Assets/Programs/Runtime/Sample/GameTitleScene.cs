@@ -7,11 +7,11 @@ namespace Sample
     {
         protected override string AssetPathOrAddress => "Assets/Prefabs/GameTitleScene.prefab";
 
-        protected internal override Task Initialize()
+        public override Task Startup()
         {
             SceneComponent.Initialize();
 
-            return base.Initialize();
+            return base.Startup();
         }
     }
 }

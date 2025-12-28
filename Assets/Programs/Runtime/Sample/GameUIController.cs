@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+using Game.Core.Extensions;
 using Game.Core.MessagePipe;
 using Game.Core.Services;
 using UnityChan;
@@ -22,7 +24,7 @@ namespace Sample
 
         public void Initialize()
         {
-            _gamePauseUI.Initialize();
+            // _gamePauseUI.Initialize();
         }
 
         private void Awake()
@@ -60,8 +62,9 @@ namespace Sample
 
             if (_ui.Pause.WasPressedThisFrame())
             {
-                _pause = !_pause;
-                _gamePauseUI.SetActive(_pause);
+                GamePauseUIDialog.RunAsync();
+                // _pause = !_pause;
+                // _gamePauseUI.SetActive(_pause);
             }
         }
 
