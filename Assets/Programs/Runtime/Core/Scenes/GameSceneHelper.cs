@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using Game.Contents.Player;
 using Game.Core.Constants;
 using Sample;
 using UnityEngine;

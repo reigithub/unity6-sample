@@ -1,7 +1,7 @@
 using Unity.Cinemachine;
 using UnityEngine;
 
-namespace Sample
+namespace Game.Contents.Player
 {
     public class PlayerFollowCameraController : MonoBehaviour
     {

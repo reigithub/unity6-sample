@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-using Game.Core.Extensions;
 using Game.Core.MessagePipe;
 using Game.Core.Services;
 using UnityChan;
@@ -12,8 +10,6 @@ namespace Sample
     /// </summary>
     public class GameUIController : MonoBehaviour //, SDUnityChanInputSystem.IUIActions
     {
-        [SerializeField] private GamePauseUI _gamePauseUI;
-
         private GameServiceReference<MessageBrokerService> _messageBrokerService;
         private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
 

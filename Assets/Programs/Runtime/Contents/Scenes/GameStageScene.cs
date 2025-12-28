@@ -3,7 +3,7 @@ using Game.Core.Scenes;
 using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
 
-namespace Sample
+namespace Game.Contents.Scenes
 {
     public class GameStageScene : GamePrefabScene<GameStageScene, GameStageSceneComponent>, IGameSceneArg<string>
     {

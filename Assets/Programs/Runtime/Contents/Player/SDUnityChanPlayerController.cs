@@ -1,12 +1,10 @@
-using System;
-using Game.Core;
 using Game.Core.MessagePipe;
 using Game.Core.Services;
 using UnityChan;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Sample
+namespace Game.Contents.Player
 {
     /// <summary>
     /// SD-Unityちゃん用のプレイヤーコントローラー

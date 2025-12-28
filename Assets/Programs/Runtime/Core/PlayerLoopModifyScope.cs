@@ -6,20 +6,28 @@ namespace Game.Core
 {
     /// <summary>
     /// PlayerLoopSystemに処理を挟みたい時の修正用スコープ
-    /// 使用方法: using(var m = new PlayerLoopSystemModifier()) ｛}
     /// </summary>
-    public struct PlayerLoopSystemModifier : IDisposable
+    // 使用例:
+    // using (var m = PlayerLoopSystemModifier.Create())
+    // {
+    //     m.InsertAfter<Initialization.UpdateCameraMotionVectors>(new PlayerLoopSystem
+    //     {
+    //         type = typeof(???),
+    //         updateDelegate = ???
+    //     });
+    // }
+    public struct PlayerLoopModifyScope : IDisposable
     {
         private PlayerLoopSystem _rootSystem;
 
-        private PlayerLoopSystemModifier(in PlayerLoopSystem rootSystem)
+        private PlayerLoopModifyScope(in PlayerLoopSystem rootSystem)
         {
             _rootSystem = rootSystem;
         }
 
-        public static PlayerLoopSystemModifier Create()
+        public static PlayerLoopModifyScope Create()
         {
-            return new PlayerLoopSystemModifier(PlayerLoop.GetCurrentPlayerLoop());
+            return new PlayerLoopModifyScope(PlayerLoop.GetCurrentPlayerLoop());
         }
 
         public void Update()

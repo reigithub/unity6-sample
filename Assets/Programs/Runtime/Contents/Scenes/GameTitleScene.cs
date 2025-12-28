@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Game.Core.Scenes;
 
-namespace Sample
+namespace Game.Contents.Scenes
 {
     public class GameTitleScene : GamePrefabScene<GameTitleScene, GameTitleSceneComponent>
     {

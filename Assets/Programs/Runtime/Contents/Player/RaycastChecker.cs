@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Sample
+namespace Game.Contents.Player
 {
     public class RaycastChecker : MonoBehaviour
     {

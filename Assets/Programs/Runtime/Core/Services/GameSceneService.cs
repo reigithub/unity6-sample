@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using Game.Core.MessagePipe;
 using Game.Core.Scenes;
 using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
@@ -15,6 +16,9 @@ namespace Game.Core.Services
     {
         private GameServiceReference<AddressableAssetService> _assetService;
         protected AddressableAssetService AssetService => _assetService.Reference;
+
+        private GameServiceReference<MessageBrokerService> _messageBrokerService;
+        protected GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
 
         protected internal override bool AllowResidentOnMemory => true;
     }
@@ -79,13 +83,13 @@ namespace Game.Core.Services
 
 
         public async Task<TResult> TransitionDialogAsync<TScene, TComponent, TResult>(Func<TScene, TComponent, Task> initializer = null)
-            where TScene : GameScene<TScene, TComponent>, IGameSceneInitializer<TScene, TComponent>, IGameSceneResult<TResult>, new()
+            where TScene : GameDialogScene<TScene, TComponent, TResult>, new()
             where TComponent : GameSceneComponent
         {
             if (await TerminateAsync(typeof(TScene)))
                 return default;
 
-            // WARN: MonoBehaviourをnewしない方向で
+            // WARN: MonoBehaviourをnewしない方向で実装する必要がある…
             var gameScene = new TScene();
             gameScene.Scene = gameScene;
             gameScene.Initializer = initializer;
@@ -98,9 +102,11 @@ namespace Game.Core.Services
 
         private async Task TransitionCore(IGameScene gameScene)
         {
+            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.GameScene.TransitionEnter, true);
             await gameScene.LoadAsset();
             await gameScene.PreInitialize();
             await gameScene.Startup();
+            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.GameScene.TransitionFinish, true);
             await gameScene.OnReady();
         }
 
@@ -119,9 +125,9 @@ namespace Game.Core.Services
 
         private async Task TerminateAllAsync()
         {
-            foreach (var (_, s) in _gameScenes)
+            foreach (var (_, scene) in _gameScenes)
             {
-                await s.Terminate();
+                await scene.Terminate();
             }
 
             _gameScenes.Clear();

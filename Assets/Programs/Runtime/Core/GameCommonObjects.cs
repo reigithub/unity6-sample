@@ -1,4 +1,6 @@
 using Cysharp.Threading.Tasks;
+using DG.Tweening;
+using Game.Contents.Player;
 using Game.Core.Extensions;
 using Game.Core.Services;
 using Game.Core.MessagePipe;
@@ -7,6 +9,7 @@ using R3;
 using Sample;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 
 namespace Game.Core
@@ -44,6 +47,8 @@ namespace Game.Core
 
         [SerializeField] private GameUIController _gameUIController;
 
+        [SerializeField] private Image _fadeImage;
+
         [SerializeField] private TextMeshProUGUI _countText;
         [SerializeField] private TextMeshProUGUI _winText;
 
@@ -54,9 +59,6 @@ namespace Game.Core
 
         private void Initialize()
         {
-            _count = 0;
-            SetCountText();
-
             GlobalMessageBroker.GetSubscriber<int, GameObject>()
                 .Subscribe(MessageKey.Player.SpawnPlayer, handler: player =>
                 {
@@ -64,6 +66,7 @@ namespace Game.Core
                     _playerFollowCameraController.SetPlayer(player);
                 })
                 .AddTo(this);
+
             GlobalMessageBroker.GetSubscriber<int, int>()
                 .Subscribe(MessageKey.Sample.AddScore, handler: score =>
                 {
@@ -79,7 +82,16 @@ namespace Game.Core
                 })
                 .AddTo(this);
 
+            GlobalMessageBroker.GetSubscriber<int, bool>()
+                .Subscribe(MessageKey.GameScene.TransitionEnter, handler: _ => { _fadeImage.DOFade(1f, 0.5f); })
+                .AddTo(this);
+            GlobalMessageBroker.GetSubscriber<int, bool>()
+                .Subscribe(MessageKey.GameScene.TransitionFinish, handler: _ => { _fadeImage.DOFade(0f, 1f); })
+                .AddTo(this);
+
             _gameUIController.Initialize();
+            _fadeImage.DOFade(1f, 0f);
+            SetCountText();
         }
 
         private void SetCountText()

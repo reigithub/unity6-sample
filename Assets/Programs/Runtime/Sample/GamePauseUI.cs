@@ -59,11 +59,5 @@ namespace Sample
             _returnButton.onClick.AddListener(() => { });
             _quitButton.onClick.AddListener(() => { GameManager.Instance.GameQuit(); });
         }
-
-        public void SetActive(bool active)
-        {
-            Time.timeScale = active ? 0f : 1f;
-            gameObject.SetActive(active);
-        }
     }
 }

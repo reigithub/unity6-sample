@@ -304,12 +304,12 @@ namespace Game.Core.Scenes
             return Task.CompletedTask;
         }
 
-        protected bool TrySetResult(TResult result)
+        public bool TrySetResult(TResult result)
         {
             return ResultTcs?.TrySetResult(result) ?? false;
         }
 
-        protected bool TrySetCanceled()
+        public bool TrySetCanceled()
         {
             return ResultTcs?.TrySetCanceled() ?? false;
         }

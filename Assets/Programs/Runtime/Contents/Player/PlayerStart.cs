@@ -2,9 +2,10 @@ using Cysharp.Threading.Tasks;
 using Game.Core;
 using Game.Core.MessagePipe;
 using Game.Core.Services;
+using Sample;
 using UnityEngine;
 
-namespace Sample
+namespace Game.Contents.Player
 {
     /// <summary>
     /// プレイヤー生成地点

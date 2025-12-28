@@ -1,8 +1,9 @@
 using System.Threading.Tasks;
+using Game.Contents.Player;
 using Game.Core.Scenes;
 using UnityEngine;
 
-namespace Sample
+namespace Game.Contents.Scenes
 {
     public class GameStageSceneComponent : GameSceneComponent
     {
