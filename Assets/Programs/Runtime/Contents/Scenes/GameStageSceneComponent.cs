@@ -1,18 +1,28 @@
 using System.Threading.Tasks;
-using Game.Contents.Player;
 using Game.Core.Scenes;
+using TMPro;
 using UnityEngine;
 
 namespace Game.Contents.Scenes
 {
     public class GameStageSceneComponent : GameSceneComponent
     {
-        [SerializeField] private PlayerStart _playerStart;
+        [SerializeField] private TextMeshProUGUI _currentPoint;
+        [SerializeField] private TextMeshProUGUI _maxPoint;
 
-        public async Task Initialize(PlayerStart playerStart)
+        private GameStageSceneModel _sceneModel;
+
+        public Task Initialize(GameStageSceneModel sceneModel)
         {
-            _playerStart = playerStart;
-            await _playerStart.LoadPlayerAsync();
+            _sceneModel = sceneModel;
+            UpdateView();
+            return Task.CompletedTask;
+        }
+
+        public void UpdateView()
+        {
+            _currentPoint.text = _sceneModel.Point.ToString();
+            _maxPoint.text = _sceneModel.MaxPoint.ToString();
         }
     }
 }

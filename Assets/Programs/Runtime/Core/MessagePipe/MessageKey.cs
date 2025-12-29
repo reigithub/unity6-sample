@@ -7,7 +7,15 @@
             public const int System = 0;
             public const int Game = 100;
             public const int GameScene = 200;
+            public const int GameStage = 300;
             public const int Player = 500;
+            public const int UI = 600;
+        }
+
+        public struct System
+        {
+            public const int TimeScale = Offset.System + 0;
+            public const int Cursor = Offset.System + 2;
         }
 
         public struct Game
@@ -16,7 +24,7 @@
             public const int Quit = Offset.Game + 1;
             public const int Pause = Offset.Game + 2;
             public const int Resume = Offset.Game + 3;
-            public const int Restart = Offset.Game + 4;
+            public const int Return = Offset.Game + 4;
         }
 
         public struct GameScene
@@ -25,11 +33,26 @@
             public const int TransitionFinish = Offset.GameScene + 1;
         }
 
+        public struct GameStage
+        {
+            public const int Ready = Offset.GameStage + 0;
+            public const int Start = Offset.GameStage + 1;
+            public const int Retry = Offset.GameStage + 2;
+            public const int Result = Offset.GameStage + 3;
+            public const int Finish = Offset.GameStage + 4;
+        }
+
         public struct Player
         {
             public const int SpawnPlayer = Offset.Player + 0;
-            public const int AddScore = Offset.Player + 1;
-            public const int EnemyCollied = Offset.Player + 2;
+            public const int AddPoint = Offset.Player + 1;
+            public const int HpDamaged = Offset.Player + 2;
+        }
+
+        public struct UI
+        {
+            public const int Pause = Offset.UI + 0;
+            public const int ScrollWheel = Offset.UI + 1;
         }
     }
 }

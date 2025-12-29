@@ -1,7 +1,7 @@
 using Game.Core;
 using Game.Core.Extensions;
+using Game.Core.MessagePipe;
 using Game.Core.Scenes;
-using Game.Core.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,19 +12,20 @@ namespace Game.Contents.Scenes
         [SerializeField] private Button _startButton;
         [SerializeField] private Button _quitButton;
 
-        private GameServiceReference<AddressableAssetService> _assetService;
-        private GameServiceReference<GameSceneService> _sceneService;
-
         public void Initialize()
         {
             if (_startButton)
             {
-                _startButton.onClick.AddListener(() => { _sceneService.Reference.TransitionAsync<GameStageScene, string>("Stage00").Forget(); });
+                _startButton.onClick.AddListener(() =>
+                {
+                    SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, string>("Stage00").Forget();
+                    GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Game.Start, true);
+                });
             }
 
             if (_quitButton)
             {
-                _quitButton.onClick.AddListener(() => { GameManager.Instance.GameQuit(); });
+                _quitButton.onClick.AddListener(() => { GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Game.Quit, true); });
             }
         }
     }

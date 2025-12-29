@@ -21,11 +21,10 @@ namespace Game.Contents.Player
             var player = await assetService.InstantiateAsync("Assets/Prefabs/Player_SDUnityChan.prefab", transform);
 
             // Memo: この辺、もう少しキレイにかけるはず...
-
             var enemies = GameObject.FindGameObjectsWithTag("Enemy");
             foreach (var enemy in enemies)
             {
-                if (enemy.TryGetComponent<EnemyMovement>(out var enemyMovement))
+                if (enemy.TryGetComponent<EnemyController>(out var enemyMovement))
                 {
                     enemyMovement.SetPlayer(player);
                 }

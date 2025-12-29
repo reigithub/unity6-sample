@@ -6,7 +6,7 @@ namespace Sample
     /// <summary>
     /// 簡易的なエネミー追尾システム
     /// </summary>
-    public class EnemyMovement : MonoBehaviour
+    public class EnemyController : MonoBehaviour
     {
         [SerializeField] private Transform _player;
 

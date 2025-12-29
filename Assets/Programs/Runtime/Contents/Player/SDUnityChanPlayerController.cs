@@ -188,7 +188,7 @@ namespace Game.Contents.Player
             {
                 other.gameObject.SetActive(false);
 
-                GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Player.EnemyCollied, true);
+                // GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Player.EnemyCollied, true);
             }
         }
 
@@ -198,7 +198,7 @@ namespace Game.Contents.Player
             {
                 other.gameObject.SetActive(false);
 
-                GlobalMessageBroker.GetPublisher<int, int>().Publish(MessageKey.Player.AddScore, 1);
+                GlobalMessageBroker.GetPublisher<int, int>().Publish(MessageKey.Player.AddPoint, 1);
             }
         }
 

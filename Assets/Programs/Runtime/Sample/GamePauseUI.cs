@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Game.Core;
+using Game.Core.MessagePipe;
 using Game.Core.Scenes;
 using Game.Core.Services;
 using UnityEngine;
@@ -14,7 +14,7 @@ namespace Sample
         public static Task<bool> RunAsync()
         {
             var sceneService = GameServiceManager.Instance.GetService<GameSceneService>();
-            return sceneService.TransitionDialogAsync<GamePauseUIDialog, GamePauseUI, bool>(initializer: (dialog, component) =>
+            return sceneService.TransitionDialogAsync<GamePauseUIDialog, GamePauseUI, bool>(startup: (dialog, component) =>
             {
                 component.Initialize(dialog);
                 return Task.CompletedTask;
@@ -23,17 +23,21 @@ namespace Sample
 
         public override Task Startup()
         {
-            Time.timeScale = 0f;
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
+            GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.TimeScale, false);
+            GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.Cursor, true);
+            // Time.timeScale = 0f;
+            // Cursor.visible = true;
+            // Cursor.lockState = CursorLockMode.None;
             return base.Startup();
         }
 
         public override Task Terminate()
         {
-            Time.timeScale = 1f;
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
+            GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.TimeScale, true);
+            GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.Cursor, false);
+            // Time.timeScale = 1f;
+            // Cursor.visible = false;
+            // Cursor.lockState = CursorLockMode.Locked;
             return base.Terminate();
         }
     }
@@ -56,12 +60,14 @@ namespace Sample
         {
             _resumeButton.onClick.AddListener(() =>
             {
-                GameManager.Instance.GameResume();
-                dialog.Terminate();
+                // Memo: 一旦、どのメソッドでも閉じられる挙動にするという確認
+                dialog.TrySetResult(false);
+                // dialog.TrySetCanceled();
+                // dialog.Terminate();
             });
-            _retryButton.onClick.AddListener(() => { });
-            _returnButton.onClick.AddListener(() => { });
-            _quitButton.onClick.AddListener(() => { GameManager.Instance.GameQuit(); });
+            _retryButton.onClick.AddListener(() => { GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.Retry, true); });
+            _returnButton.onClick.AddListener(() => { GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.Game.Return, true); });
+            _quitButton.onClick.AddListener(() => { GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Game.Quit, true); });
         }
     }
 }

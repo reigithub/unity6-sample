@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Game.Core.Extensions;
+using Game.Core.MessagePipe;
 using Game.Core.Services;
 using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
@@ -32,17 +33,17 @@ namespace Game.Core.Scenes
 
         // 起動後の処理
         // シーン起動後に演出など
-        public virtual Task OnReady()
+        public virtual Task Ready()
         {
             return Task.CompletedTask;
         }
 
-        public virtual Task OnSleep()
+        public virtual Task Sleep()
         {
             return Task.CompletedTask;
         }
 
-        public virtual Task OnRestart()
+        public virtual Task Restart()
         {
             return Task.CompletedTask;
         }
@@ -62,6 +63,10 @@ namespace Game.Core.Scenes
         private GameServiceReference<GameSceneService> _sceneService;
         protected GameSceneService SceneService => _sceneService.Reference;
 
+        private GameServiceReference<MessageBrokerService> _messageBrokerService;
+        protected MessageBrokerService MessageBrokerService => _messageBrokerService.Reference;
+        protected GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
+
         protected abstract string AssetPathOrAddress { get; }
 
         public virtual Task<GameObject> LoadAsset()
@@ -79,7 +84,7 @@ namespace Game.Core.Scenes
             return Task.CompletedTask;
         }
 
-        public virtual Task OnReady()
+        public virtual Task Ready()
         {
             return Task.CompletedTask;
         }
@@ -88,6 +93,13 @@ namespace Game.Core.Scenes
         {
             return Task.CompletedTask;
         }
+    }
+
+    // Memo: Arg, Resultと同じく任意でつけられるという事にする
+    public interface IGameSceneModel<TSceneModel>
+        where TSceneModel : class, new()
+    {
+        public TSceneModel SceneModel { get; set; }
     }
 
     public interface IGameSceneArg<TArg>
@@ -100,10 +112,12 @@ namespace Game.Core.Scenes
         public UniTaskCompletionSource<TResult> ResultTcs { get; set; }
     }
 
-    // 任意パラメータを受け取るためのイニシャライザー
-    public interface IGameSceneInitializer<TScene, TComponent>
+    // 任意パラメータを受け取りつつ処理を挟みたいとき
+    // 主にダイアログ
+    // プロセス毎に分けるか要検討
+    public interface IGameSceneStartupFilter<TScene, TSceneComponent>
     {
-        public Func<TScene, TComponent, Task> Initializer { get; set; }
+        public Func<TScene, TSceneComponent, Task> StartupFilter { get; set; }
     }
 
     public abstract class GameScene<TGameScene, TGameSceneComponent> : GameScene
@@ -170,9 +184,6 @@ namespace Game.Core.Scenes
                 _instance = null;
                 _asset = null;
             }
-
-            // var g = GameObject.Find($"{AssetPathOrAddress}" + "(Clone)");
-            // g.SafeDestroy();
 
             return Task.CompletedTask;
         }
@@ -246,11 +257,11 @@ namespace Game.Core.Scenes
 
     // 主にダイアログ用(オーバーレイ表示想定)
     // Memo: MonoBehaviourを使う以上、C#では多重継承できないので、個別作成
-    public abstract class GameDialogScene<TScene, TComponent, TResult> : GameScene<TScene, TComponent>, IGameSceneInitializer<TScene, TComponent>, IGameSceneResult<TResult>
+    public abstract class GameDialogScene<TScene, TSceneComponent, TResult> : GameScene<TScene, TSceneComponent>, IGameSceneStartupFilter<TScene, TSceneComponent>, IGameSceneResult<TResult>
         where TScene : IGameScene
-        where TComponent : GameSceneComponent
+        where TSceneComponent : GameSceneComponent
     {
-        public Func<TScene, TComponent, Task> Initializer { get; set; }
+        public Func<TScene, TSceneComponent, Task> StartupFilter { get; set; }
 
         public UniTaskCompletionSource<TResult> ResultTcs { get; set; }
 
@@ -270,11 +281,11 @@ namespace Game.Core.Scenes
 
         public override Task Startup()
         {
-            Initializer?.Invoke(Scene, GetSceneComponent());
+            StartupFilter?.Invoke(Scene, SceneComponent);
             return Task.CompletedTask;
         }
 
-        public override Task OnReady()
+        public override Task Ready()
         {
             return Task.CompletedTask;
         }
@@ -304,19 +315,25 @@ namespace Game.Core.Scenes
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// リザルトをセットしてダイアログを閉じる
+        /// </summary>
         public bool TrySetResult(TResult result)
         {
             return ResultTcs?.TrySetResult(result) ?? false;
         }
 
+        /// <summary>
+        /// ダイアログをキャンセルして閉じる
+        /// </summary>
         public bool TrySetCanceled()
         {
             return ResultTcs?.TrySetCanceled() ?? false;
         }
 
-        protected override TComponent GetSceneComponent()
+        protected override TSceneComponent GetSceneComponent()
         {
-            return SceneComponent ??= GameSceneHelper.GetSceneComponent<TComponent>(_instance);
+            return SceneComponent ??= GameSceneHelper.GetSceneComponent<TSceneComponent>(_instance);
         }
     }
 }

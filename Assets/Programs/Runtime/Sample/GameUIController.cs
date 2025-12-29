@@ -16,11 +16,8 @@ namespace Sample
         private SDUnityChanInputSystem _inputSystem;
         private SDUnityChanInputSystem.UIActions _ui;
 
-        private bool _pause;
-
         public void Initialize()
         {
-            // _gamePauseUI.Initialize();
         }
 
         private void Awake()
@@ -58,7 +55,15 @@ namespace Sample
 
             if (_ui.Pause.WasPressedThisFrame())
             {
-                GamePauseUIDialog.RunAsync();
+                GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.Game.Pause, true);
+            }
+
+            if (_ui.ScrollWheel.WasPressedThisFrame())
+            {
+                // 今はプレイヤーフォローカメラ操作用
+                var scrollWheel = _ui.ScrollWheel.ReadValue<Vector2>().normalized;
+                // Debug.Log($"ScrollWheel(WasPressedThisFrame)=> x: {scrollWheel.x}, y: {scrollWheel.y}");
+                GlobalMessageBroker.GetPublisher<int, Vector2>().Publish(MessageKey.UI.ScrollWheel, scrollWheel);
             }
         }
 
