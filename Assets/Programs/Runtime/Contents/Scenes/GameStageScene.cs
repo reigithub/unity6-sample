@@ -10,25 +10,27 @@ using UnityEngine.ResourceManagement.ResourceProviders;
 
 namespace Game.Contents.Scenes
 {
-    public class GameStageScene : GamePrefabScene<GameStageScene, GameStageSceneComponent>, IGameSceneModel<GameStageSceneModel>, IGameSceneArg<string>
+    public class GameStageScene : GamePrefabScene<GameStageScene, GameStageSceneComponent>, IGameSceneModel<GameStageSceneModel>, IGameSceneArg<int>
     {
         protected override string AssetPathOrAddress => "Assets/Prefabs/GameStageScene.prefab";
 
         public GameStageSceneModel SceneModel { get; set; }
 
-        private string _stageName;
+        private int _stageId;
         private SceneInstance _stageSceneInstance;
 
-        public Task PreInitialize(string stageName)
+        public Task PreInitialize(int stageId)
         {
-            _stageName = stageName;
+            _stageId = stageId;
+            var stageMaster = MemoryDatabase.GameStageMasterTable.FindById(_stageId);
+            SceneModel.Initialize(stageMaster);
             return Task.CompletedTask;
         }
 
         public override async Task<GameObject> LoadAsset()
         {
             var instance = await base.LoadAsset();
-            _stageSceneInstance = await AssetService.LoadSceneAsync(_stageName);
+            _stageSceneInstance = await AssetService.LoadSceneAsync(SceneModel.StageMaster.Name);
             return instance;
         }
 
@@ -70,7 +72,7 @@ namespace Game.Contents.Scenes
                 {
                     SceneModel.StageState = GameStageState.Retry;
                     // 現在のステージへ再遷移
-                    await SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, string>(_stageName);
+                    await SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, int>(_stageId);
                 })
                 .AddTo(SceneComponent);
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
@@ -87,15 +89,25 @@ namespace Game.Contents.Scenes
                     // リザルト画面
                     SceneModel.StageState = GameStageState.Result;
                     SceneModel.StageResult = result;
-                    Debug.LogError($"Stage Result: {result}");
+                    // Debug.LogError($"Stage Result: {result}");
                     await GameResultUIDialog.RunAsync(SceneModel.CreateStageResult());
                 })
                 .AddTo(SceneComponent);
-            GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Finish, handler: _ =>
+            GlobalMessageBroker.GetAsyncSubscriber<int, int?>()
+                .Subscribe(MessageKey.GameStage.Finish, handler: async (nextStageId, _) =>
                 {
-                    // 次のステージへ
                     SceneModel.StageState = GameStageState.Finish;
+                    if (nextStageId.HasValue)
+                    {
+                        // 次のステージへ
+                        await SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, int>(nextStageId.Value);
+                    }
+                    else
+                    {
+                        // 総合リザルト画面？？？
+                        // 今はタイトルに戻しておく
+                        await SceneService.TransitionAsync<GameTitleScene>();
+                    }
                 })
                 .AddTo(SceneComponent);
 

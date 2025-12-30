@@ -1,3 +1,4 @@
+using Game.Core.MasterData.MemoryTables;
 using R3;
 using UnityEngine;
 
@@ -29,18 +30,24 @@ namespace Game.Contents.Scenes
 
         public int PlayerHp { get; set; }
         public int PlayerMaxHp { get; set; }
+
+        public int? NextStageId { get; set; }
     }
 
     public class GameStageSceneModel
     {
+        public GameStageMaster StageMaster { get; private set; }
+
         // Memo: データの持ち方は後日検討するとして、一旦動くものを作成
         public GameStageState StageState { get; set; }
         public GameStageResult StageResult { get; set; }
+
         public int Point { get; set; }
         public int MaxPoint { get; set; }
 
         public int PlayerHp { get; set; }
         public int PlayerMaxHp { get; set; }
+
         public float PlayerStamina { get; set; }
         public float PlayerMaxStamina { get; set; }
 
@@ -50,13 +57,17 @@ namespace Game.Contents.Scenes
         {
             StageState = GameStageState.None;
             StageResult = GameStageResult.None;
-            Point = 0;
-            MaxPoint = 5;
+        }
 
-            PlayerHp = 1;
-            PlayerMaxHp = 1;
-            PlayerStamina = 100f;
-            PlayerMaxStamina = 100f;
+        public void Initialize(GameStageMaster stageMaster)
+        {
+            StageMaster = stageMaster;
+            Point = 0;
+            MaxPoint = stageMaster.MaxPoint;
+            PlayerHp = stageMaster.PlayerMaxHp;
+            PlayerMaxHp = stageMaster.PlayerMaxHp;
+            // PlayerStamina = 100f;
+            // PlayerMaxStamina = 100f;
         }
 
         public void AddPoint(int point)
@@ -92,7 +103,8 @@ namespace Game.Contents.Scenes
                 Point = Point,
                 MaxPoint = MaxPoint,
                 PlayerHp = PlayerHp,
-                PlayerMaxHp = PlayerMaxHp
+                PlayerMaxHp = PlayerMaxHp,
+                NextStageId = StageMaster.NextStageId,
             };
         }
     }

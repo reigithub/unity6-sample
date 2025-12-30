@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: Prefabs
+  m_Name: MasterData
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
-  m_GroupName: Prefabs
-  m_GUID: 2cd145404a5cc5c4c9bd67cefe02d650
+  m_GroupName: MasterData
+  m_GUID: 43c5ae5b146034d4982d08120334312b
   m_SerializeEntries:
-  - m_GUID: 3a8d1e0bdbb954c4083cedaf437d6248
-    m_Address: Assets/Prefabs/Player_SDUnityChan.prefab
+  - m_GUID: 4f8bf61e373650c42958b5e5c1572ea5
+    m_Address: MasterDataBinary
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -24,5 +24,5 @@ MonoBehaviour:
   m_Settings: {fileID: 11400000, guid: be8c7bfaed8f7eb428b95bd26a52c525, type: 2}
   m_SchemaSet:
     m_Schemas:
-    - {fileID: 11400000, guid: 2da12227ab4d5cf4198eb6b71aa0ad65, type: 2}
-    - {fileID: 11400000, guid: 51d50e91db431da4998a31b064d6c092, type: 2}
+    - {fileID: 11400000, guid: bd11acf2d06e3b94499bb1b6671f190d, type: 2}
+    - {fileID: 11400000, guid: bd2b488790ae9ee45a2527f2c12e2622, type: 2}

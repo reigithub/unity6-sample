@@ -1,3 +1,4 @@
+using System.Linq;
 using Game.Core;
 using Game.Core.Extensions;
 using Game.Core.MessagePipe;
@@ -18,7 +19,14 @@ namespace Game.Contents.Scenes
             {
                 _startButton.onClick.AddListener(() =>
                 {
-                    SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, string>("Stage00").Forget();
+                    var master = MemoryDatabase.GameStageMasterTable.All
+                        .OrderBy(x => x.Id)
+                        .FirstOrDefault();
+                    if (master != null)
+                        SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, int>(master.Id).Forget();
+                    else
+                        SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, int>(1).Forget(); // 本来はエラーメッセージだして落とす
+
                     GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Game.Start, true);
                 });
             }

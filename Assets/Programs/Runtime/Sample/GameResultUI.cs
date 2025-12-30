@@ -72,11 +72,11 @@ namespace Sample
             _hp.text = data.PlayerHp.ToString();
             _maxHp.text = data.PlayerMaxHp.ToString();
 
+            _nextButton.gameObject.SetActive(data.NextStageId.HasValue);
             _nextButton.onClick.AddListener(() =>
             {
                 dialog.TrySetResult(true);
-                // TODO: 次のステージへ遷移
-                GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.ReturnTitle, true);
+                GlobalMessageBroker.GetAsyncPublisher<int, int?>().Publish(MessageKey.GameStage.Finish, data.NextStageId);
             });
             _returnButton.onClick.AddListener(() =>
             {
