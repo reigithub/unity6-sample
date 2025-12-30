@@ -34,7 +34,6 @@ namespace Game.Contents.Scenes
 
         public override async Task Startup()
         {
-            // Memo: MessageBrokerからMessageBroker呼ぶのもアレなので、リファクタリングを検討
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
                 .Subscribe(MessageKey.GameStage.Ready, handler: async (_, _) =>
                 {
@@ -102,6 +101,7 @@ namespace Game.Contents.Scenes
 
 
             // プレイヤー設定
+            // Memo: MessageBrokerからMessageBroker呼ぶのもアレなので、リファクタリングを検討
             GlobalMessageBroker.GetSubscriber<int, int>()
                 .Subscribe(MessageKey.Player.AddPoint, handler: point =>
                 {
@@ -113,7 +113,6 @@ namespace Game.Contents.Scenes
                     }
                 })
                 .AddTo(SceneComponent);
-
             GlobalMessageBroker.GetSubscriber<int, int>()
                 .Subscribe(MessageKey.Player.HpDamaged, handler: hp =>
                 {
@@ -135,7 +134,7 @@ namespace Game.Contents.Scenes
             await playerStart.LoadPlayerAsync();
 
             // Memo: ビューがモデルの変更を検知する方法については賛否あると思われるが一旦は愚直に渡す
-            // (MessageBroker、MessagePipe.Request/Response、R3.ReactivePropertyとか疎結合化は後ほど検討する → やるにしも現在の規模では仰々しすぎないかということで…)
+            // (MessageBroker、MessagePipe.Request/Response、R3.ReactivePropertyとか疎結合化は後ほど検討する)
             await SceneComponent.Initialize(SceneModel);
             await base.Startup();
         }
