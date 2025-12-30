@@ -57,8 +57,6 @@ namespace Game.Core
 
         // Memo: どこに持つかは要検討としてマーク
         private bool _gameStart;
-        private bool _gameStageStart;
-        private int _count;
 
         private void Initialize()
         {
@@ -69,7 +67,6 @@ namespace Game.Core
 
         private void Subscribe()
         {
-            // Memo: あらゆることをここで解決しようとしていて、良くないかもしれない…一旦はまだ小規模なので、、、デカくなりはじめたら見直しが必要
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
                 .Subscribe(MessageKey.System.TimeScale, handler: (status, _) =>
                 {
@@ -102,30 +99,6 @@ namespace Game.Core
             GlobalMessageBroker.GetSubscriber<int, bool>()
                 .Subscribe(MessageKey.Game.Quit, handler: _ => { GameManager.Instance.GameQuit(); })
                 .AddTo(this);
-            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.Game.Pause, handler: async (_, _) =>
-                {
-                    if (!_gameStart || !_gameStageStart) return;
-                    await GamePauseUIDialog.RunAsync();
-                })
-                .AddTo(this);
-            GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.Game.Resume, handler: _ =>
-                {
-                    if (!_gameStart || !_gameStageStart) return;
-                    SceneService.TerminateAsync<GamePauseUIDialog>().Forget();
-                })
-                .AddTo(this);
-            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.Game.Return, handler: async (_, _) =>
-                {
-                    if (!_gameStart || !_gameStageStart) return;
-                    _gameStart = false;
-                    _gameStageStart = false;
-                    // 現在のシーンを終了させてタイトルに戻る
-                    await SceneService.TransitionAsync<GameTitleScene>();
-                })
-                .AddTo(this);
 
             // GameScene
             GlobalMessageBroker.GetSubscriber<int, bool>()
@@ -133,27 +106,6 @@ namespace Game.Core
                 .AddTo(this);
             GlobalMessageBroker.GetSubscriber<int, bool>()
                 .Subscribe(MessageKey.GameScene.TransitionFinish, handler: _ => { _fadeImage.DOFade(0f, 1f); })
-                .AddTo(this);
-
-            // GameStage
-            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Ready, handler: (_, _) =>
-                {
-                    _gameStageStart = false;
-                    return UniTask.CompletedTask;
-                })
-                .AddTo(this);
-            GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Start, handler: _ => { _gameStageStart = true; })
-                .AddTo(this);
-            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Retry, handler: (_, _) => UniTask.CompletedTask)
-                .AddTo(this);
-            GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Result, handler: _ => { })
-                .AddTo(this);
-            GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Finish, handler: _ => { _gameStageStart = false; })
                 .AddTo(this);
 
             // Player

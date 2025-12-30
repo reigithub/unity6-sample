@@ -25,9 +25,6 @@ namespace Sample
         {
             GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.TimeScale, false);
             GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.Cursor, true);
-            // Time.timeScale = 0f;
-            // Cursor.visible = true;
-            // Cursor.lockState = CursorLockMode.None;
             return base.Startup();
         }
 
@@ -35,9 +32,6 @@ namespace Sample
         {
             GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.TimeScale, true);
             GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.Cursor, false);
-            // Time.timeScale = 1f;
-            // Cursor.visible = false;
-            // Cursor.lockState = CursorLockMode.Locked;
             return base.Terminate();
         }
     }
@@ -66,7 +60,7 @@ namespace Sample
                 // dialog.Terminate();
             });
             _retryButton.onClick.AddListener(() => { GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.Retry, true); });
-            _returnButton.onClick.AddListener(() => { GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.Game.Return, true); });
+            _returnButton.onClick.AddListener(() => { GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.ReturnTitle, true); });
             _quitButton.onClick.AddListener(() => { GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Game.Quit, true); });
         }
     }

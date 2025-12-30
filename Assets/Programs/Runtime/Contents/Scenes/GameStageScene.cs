@@ -34,6 +34,7 @@ namespace Game.Contents.Scenes
 
         public override async Task Startup()
         {
+            // Memo: MessageBrokerからMessageBroker呼ぶのもアレなので、リファクタリングを検討
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
                 .Subscribe(MessageKey.GameStage.Ready, handler: async (_, _) =>
                 {
@@ -51,6 +52,21 @@ namespace Game.Contents.Scenes
                 })
                 .AddTo(SceneComponent);
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
+                .Subscribe(MessageKey.GameStage.Pause, handler: async (_, _) =>
+                {
+                    if (!SceneModel.CanPause()) return;
+                    // 一時停止メニュー
+                    await GamePauseUIDialog.RunAsync();
+                })
+                .AddTo(SceneComponent);
+            GlobalMessageBroker.GetSubscriber<int, bool>()
+                .Subscribe(MessageKey.GameStage.Resume, handler: _ =>
+                {
+                    // 一時停止メニューを閉じる
+                    SceneService.TerminateAsync<GamePauseUIDialog>().Forget();
+                })
+                .AddTo(SceneComponent);
+            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
                 .Subscribe(MessageKey.GameStage.Retry, handler: async (_, _) =>
                 {
                     SceneModel.StageState = GameStageState.Retry;
@@ -58,11 +74,22 @@ namespace Game.Contents.Scenes
                     await SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, string>(_stageName);
                 })
                 .AddTo(SceneComponent);
-            GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Result, handler: _ =>
+            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
+                .Subscribe(MessageKey.GameStage.ReturnTitle, handler: async (_, _) =>
+                {
+                    // 現在のシーンを終了させてタイトルに戻る
+                    await SceneService.TransitionAsync<GameTitleScene>();
+                })
+                .AddTo(SceneComponent);
+
+            GlobalMessageBroker.GetAsyncSubscriber<int, GameStageResult>()
+                .Subscribe(MessageKey.GameStage.Result, handler: async (result, _) =>
                 {
                     // リザルト画面
                     SceneModel.StageState = GameStageState.Result;
+                    SceneModel.StageResult = result;
+                    Debug.LogError($"Stage Result: {result}");
+                    await GameResultUIDialog.RunAsync(SceneModel.CreateStageResult());
                 })
                 .AddTo(SceneComponent);
             GlobalMessageBroker.GetSubscriber<int, bool>()
@@ -78,10 +105,30 @@ namespace Game.Contents.Scenes
             GlobalMessageBroker.GetSubscriber<int, int>()
                 .Subscribe(MessageKey.Player.AddPoint, handler: point =>
                 {
-                    SceneModel.Point += point;
+                    SceneModel.AddPoint(point);
                     SceneComponent.UpdateView();
+                    if (SceneModel.IsClear())
+                    {
+                        GlobalMessageBroker.GetAsyncPublisher<int, GameStageResult>().Publish(MessageKey.GameStage.Result, GameStageResult.Clear);
+                    }
                 })
                 .AddTo(SceneComponent);
+
+            GlobalMessageBroker.GetSubscriber<int, int>()
+                .Subscribe(MessageKey.Player.HpDamaged, handler: hp =>
+                {
+                    SceneModel.PlayerHpDamaged(hp);
+                    SceneComponent.UpdateView();
+                    if (SceneModel.IsFailed())
+                    {
+                        GlobalMessageBroker.GetAsyncPublisher<int, GameStageResult>().Publish(MessageKey.GameStage.Result, GameStageResult.Failed);
+                    }
+                })
+                .AddTo(SceneComponent);
+
+            // SceneModel.Mp.SubscribeAwait(async (mp, token) => { await Task.CompletedTask; })
+            //     .AddTo(SceneComponent);
+            // SceneModel.Mp.Value++;
 
             // プレイヤー爆誕の儀
             var playerStart = GameSceneHelper.GetPlayerStart(_stageSceneInstance.Scene);

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Game.Contents.Scenes;
 using Game.Core.MessagePipe;
 using UnityEngine;
 
@@ -49,6 +50,8 @@ namespace Game.Core.Services
             GlobalMessageBroker.AddMessageBroker<int, Vector2>();
             GlobalMessageBroker.AddMessageBroker<int, Vector3>();
             GlobalMessageBroker.AddMessageBroker<int, UniTaskCompletionSource>();
+
+            GlobalMessageBroker.AddMessageBroker<int, GameStageResult>();
 
             GlobalMessageBroker.Build();
         }

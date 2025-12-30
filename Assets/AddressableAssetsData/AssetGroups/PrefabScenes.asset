@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: PrefabScenes
   m_GUID: 101f7e68744e8854380229f3991c04e5
   m_SerializeEntries:
+  - m_GUID: 2ae6385c86d66474eafc5d809008b5d9
+    m_Address: Assets/Prefabs/UI/GameResultUI.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 558fb7bc29c3dfb4e961bdc80498d6a3
     m_Address: Assets/Prefabs/UI/GamePauseUI.prefab
     m_ReadOnly: 0

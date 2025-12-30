@@ -53,9 +53,9 @@ namespace Sample
             // _ui.{InputAction}.WasPressedThisFrame() //押した瞬間
             // _ui.{InputAction}.WasReleasedThisFrame() //離した瞬間
 
-            if (_ui.Pause.WasPressedThisFrame())
+            if (_ui.Escape.WasPressedThisFrame())
             {
-                GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.Game.Pause, true);
+                GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.Pause, true);
             }
 
             if (_ui.ScrollWheel.WasPressedThisFrame())

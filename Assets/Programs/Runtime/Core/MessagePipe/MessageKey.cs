@@ -22,9 +22,6 @@
         {
             public const int Start = Offset.Game + 0;
             public const int Quit = Offset.Game + 1;
-            public const int Pause = Offset.Game + 2;
-            public const int Resume = Offset.Game + 3;
-            public const int Return = Offset.Game + 4;
         }
 
         public struct GameScene
@@ -37,9 +34,12 @@
         {
             public const int Ready = Offset.GameStage + 0;
             public const int Start = Offset.GameStage + 1;
-            public const int Retry = Offset.GameStage + 2;
-            public const int Result = Offset.GameStage + 3;
-            public const int Finish = Offset.GameStage + 4;
+            public const int Pause = Offset.Game + 2;
+            public const int Resume = Offset.Game + 3;
+            public const int Retry = Offset.GameStage + 4;
+            public const int ReturnTitle = Offset.GameStage + 5;
+            public const int Result = Offset.GameStage + 6;
+            public const int Finish = Offset.GameStage + 7;
         }
 
         public struct Player
@@ -51,7 +51,7 @@
 
         public struct UI
         {
-            public const int Pause = Offset.UI + 0;
+            public const int Escape = Offset.UI + 0;
             public const int ScrollWheel = Offset.UI + 1;
         }
     }
