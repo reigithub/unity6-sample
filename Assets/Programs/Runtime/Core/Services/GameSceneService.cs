@@ -143,7 +143,7 @@ namespace Game.Core.Services
             gameScene.Scene = gameScene; // コンポーネント側からダイアログ操作などを可能にするために、具象化クラスをベースクラスへ入れたい…（本当はMVCならモデルを渡すべきか）
             gameScene.StartupFilter = startup;
             var tcs = gameScene.ResultTcs = new UniTaskCompletionSource<TResult>();
-            await TransitionCore(gameScene);
+            await TransitionCore(gameScene, isDialog: true);
             _gameScenes.Add((typeof(TScene), gameScene));
 
             try
@@ -164,13 +164,14 @@ namespace Game.Core.Services
         /// <summary>
         /// シーンを起動させる共通処理
         /// </summary>
-        private async Task TransitionCore(IGameScene gameScene)
+        private async Task TransitionCore(IGameScene gameScene, bool isDialog = false)
         {
-            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.GameScene.TransitionEnter, true);
+            // Memo: ダイアログかではなく、遷移タイプがOverlayかで判断したい
+            if (!isDialog) await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameScene.TransitionEnter, true);
             await gameScene.LoadAsset();
             await gameScene.PreInitialize();
             await gameScene.Startup();
-            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.GameScene.TransitionFinish, true);
+            if (!isDialog) await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameScene.TransitionFinish, true);
             await gameScene.Ready();
         }
 

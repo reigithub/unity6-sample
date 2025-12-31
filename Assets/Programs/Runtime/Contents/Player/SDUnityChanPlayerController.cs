@@ -182,24 +182,14 @@ namespace Game.Contents.Player
             return _groundedRaycastChecker.Check();
         }
 
-        private void OnCollisionEnter(Collision other)
-        {
-            if (other.gameObject.name.Contains("Enemy"))
-            {
-                other.gameObject.SetActive(false);
-
-                GlobalMessageBroker.GetPublisher<int, int>().Publish(MessageKey.Player.HpDamaged, 1);
-            }
-        }
-
         private void OnTriggerEnter(Collider other)
         {
-            if (other.gameObject.name.Contains("PickUp"))
-            {
-                other.gameObject.SetActive(false);
+            GlobalMessageBroker.GetPublisher<int, Collider>().Publish(MessageKey.Player.OnTriggerEnter, other);
+        }
 
-                GlobalMessageBroker.GetPublisher<int, int>().Publish(MessageKey.Player.AddPoint, 1);
-            }
+        private void OnCollisionEnter(Collision other)
+        {
+            GlobalMessageBroker.GetPublisher<int, Collision>().Publish(MessageKey.Player.OnCollisionEnter, other);
         }
 
         #region SDUnityChanInputSystem.IPlayerActions

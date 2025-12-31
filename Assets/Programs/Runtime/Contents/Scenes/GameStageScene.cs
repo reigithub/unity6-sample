@@ -114,10 +114,16 @@ namespace Game.Contents.Scenes
 
             // プレイヤー設定
             // Memo: MessageBrokerからMessageBroker呼ぶのもアレなので、リファクタリングを検討
-            GlobalMessageBroker.GetSubscriber<int, int>()
-                .Subscribe(MessageKey.Player.AddPoint, handler: point =>
+            GlobalMessageBroker.GetSubscriber<int, Collider>()
+                .Subscribe(MessageKey.Player.OnTriggerEnter, handler: other =>
                 {
-                    SceneModel.AddPoint(point);
+                    // Memo: オブジェクトに応じてポイントを変更できるマスタを用意（GameStageItemMaster）
+                    if (!other.gameObject.name.Contains("PickUp"))
+                        return;
+
+                    other.gameObject.SafeDestroy();
+
+                    SceneModel.AddPoint(1);
                     SceneComponent.UpdateView();
                     if (SceneModel.IsClear())
                     {
@@ -125,10 +131,16 @@ namespace Game.Contents.Scenes
                     }
                 })
                 .AddTo(SceneComponent);
-            GlobalMessageBroker.GetSubscriber<int, int>()
-                .Subscribe(MessageKey.Player.HpDamaged, handler: hp =>
+            GlobalMessageBroker.GetSubscriber<int, Collision>()
+                .Subscribe(MessageKey.Player.OnCollisionEnter, handler: other =>
                 {
-                    SceneModel.PlayerHpDamaged(hp);
+                    // Memo: エネミーに応じてダメージを変更できるマスタを用意（EnemyMaster）
+                    if (!other.gameObject.name.Contains("Enemy"))
+                        return;
+
+                    other.gameObject.SafeDestroy();
+
+                    SceneModel.PlayerHpDamaged(1);
                     SceneComponent.UpdateView();
                     if (SceneModel.IsFailed())
                     {
@@ -146,7 +158,7 @@ namespace Game.Contents.Scenes
             await playerStart.LoadPlayerAsync();
 
             // Memo: ビューがモデルの変更を検知する方法については賛否あると思われるが一旦は愚直に渡す
-            // (MessageBroker、MessagePipe.Request/Response、R3.ReactivePropertyとか疎結合化は後ほど検討する)
+            // (ReactivePropertyとか疎結合化は後ほど検討する)
             await SceneComponent.Initialize(SceneModel);
             await base.Startup();
         }

@@ -29,10 +29,10 @@ namespace Sample
             return base.Startup();
         }
 
-        public override async Task Ready()
+        public override Task Ready()
         {
-            await base.Ready();
             SceneComponent.CountdownStart();
+            return base.Ready();
         }
 
         public override Task Terminate()
