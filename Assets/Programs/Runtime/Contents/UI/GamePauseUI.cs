@@ -5,7 +5,7 @@ using Game.Core.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Sample
+namespace Game.Contents.UI
 {
     public class GamePauseUIDialog : GameDialogScene<GamePauseUIDialog, GamePauseUI, bool>
     {

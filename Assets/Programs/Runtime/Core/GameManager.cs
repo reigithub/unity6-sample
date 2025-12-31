@@ -76,6 +76,7 @@ namespace Game.Core
         private async Task GameStartAsync()
         {
             GameServiceManager.Instance.StartUp();
+            GameServiceManager.Instance.AddService<GameSceneService>();
             GameServiceManager.Instance.AddService<MasterDataService>();
             GameServiceManager.Instance.AddService<MessageBrokerService>();
 

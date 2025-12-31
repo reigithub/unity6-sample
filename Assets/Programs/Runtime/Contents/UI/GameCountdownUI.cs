@@ -5,7 +5,7 @@ using Game.Core.Services;
 using TMPro;
 using UnityEngine;
 
-namespace Sample
+namespace Game.Contents.UI
 {
     public class GameCountdownUIDialog : GameDialogScene<GameCountdownUIDialog, GameCountdownUI, bool>
     {

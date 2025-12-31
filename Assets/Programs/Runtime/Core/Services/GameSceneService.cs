@@ -42,8 +42,8 @@ namespace Game.Core.Services
             await TerminateAllAsync();
 
             var gameScene = new TScene();
-            await TransitionCore(gameScene);
             _gameScenes.Add((typeof(TScene), gameScene));
+            await TransitionCore(gameScene);
         }
 
         // 引数とモデルクラスつきの画面遷移
@@ -55,10 +55,10 @@ namespace Game.Core.Services
 
             var sceneType = typeof(TScene);
             var gameScene = new TScene();
+            _gameScenes.Add((sceneType, gameScene));
             gameScene.SceneModel = new TModel();
             await gameScene.PreInitialize(arg);
             await TransitionCore(gameScene);
-            _gameScenes.Add((sceneType, gameScene));
         }
 
         // 引数つきの画面遷移
@@ -68,9 +68,9 @@ namespace Game.Core.Services
             await TerminateAllAsync();
 
             var gameScene = new TScene();
+            _gameScenes.Add((typeof(TScene), gameScene));
             await gameScene.PreInitialize(arg);
             await TransitionCore(gameScene);
-            _gameScenes.Add((typeof(TScene), gameScene));
         }
 
         // リザルトつきの画面遷移
@@ -80,10 +80,10 @@ namespace Game.Core.Services
             await TerminateAllAsync();
 
             var gameScene = new TScene();
+            _gameScenes.Add((typeof(TScene), gameScene));
             var tcs = gameScene.ResultTcs = new UniTaskCompletionSource<TResult>();
 
             await TransitionCore(gameScene);
-            _gameScenes.Add((typeof(TScene), gameScene));
 
             // Memo: リザルト周りは処理をまとめたい…
             try
@@ -107,11 +107,11 @@ namespace Game.Core.Services
             await TerminateAllAsync();
 
             var gameScene = new TScene();
+            _gameScenes.Add((typeof(TScene), gameScene));
             await gameScene.PreInitialize(arg);
             var tcs = gameScene.ResultTcs = new UniTaskCompletionSource<TResult>();
 
             await TransitionCore(gameScene);
-            _gameScenes.Add((typeof(TScene), gameScene));
 
             try
             {
@@ -140,11 +140,11 @@ namespace Game.Core.Services
 
             // WARN: MonoBehaviourをnewしない方向で実装する必要がある…
             var gameScene = new TScene();
+            _gameScenes.Add((typeof(TScene), gameScene));
             gameScene.Scene = gameScene; // コンポーネント側からダイアログ操作などを可能にするために、具象化クラスをベースクラスへ入れたい…（本当はダイアログ操作部分だけを公開したいが）
             gameScene.StartupFilter = startup;
             var tcs = gameScene.ResultTcs = new UniTaskCompletionSource<TResult>();
             await TransitionCore(gameScene, isDialog: true);
-            _gameScenes.Add((typeof(TScene), gameScene));
 
             try
             {
@@ -188,7 +188,7 @@ namespace Game.Core.Services
         {
             var type = typeof(TScene);
             var target = _gameScenes.LastOrDefault(x => x.type == type);
-            if (target.type != null)
+            if (target.gameScene != null)
             {
                 await target.gameScene.Terminate();
                 _gameScenes.Remove(target);
@@ -201,9 +201,14 @@ namespace Game.Core.Services
         private async Task TerminateAllAsync()
         {
             // Memo: インスタンスを抹殺するので、逆から閉じないとオペレーションエラーになるヨ
-            foreach (var (_, scene) in Enumerable.Reverse(_gameScenes))
+            foreach (var (type, gameScene) in Enumerable.Reverse(_gameScenes))
             {
-                await scene.Terminate();
+                Debug.LogError($"Terminate Scene: {type.FullName}");
+
+                if (gameScene != null)
+                {
+                    await gameScene.Terminate();
+                }
             }
 
             _gameScenes.Clear();

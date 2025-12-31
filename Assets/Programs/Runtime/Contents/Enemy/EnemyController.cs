@@ -2,7 +2,7 @@ using Game.Contents.Player;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace Sample
+namespace Game.Contents.Enemy
 {
     /// <summary>
     /// 簡易的なエネミー追尾システム

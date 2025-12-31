@@ -2,6 +2,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Game.Contents.Player;
+using Game.Contents.UI;
 using Game.Core.Extensions;
 using Game.Core.Services;
 using Game.Core.MessagePipe;

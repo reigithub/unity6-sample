@@ -7,7 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Sample
+namespace Game.Contents.UI
 {
     public class GameResultUIDialog : GameDialogScene<GameResultUIDialog, GameResultUI, bool>
     {

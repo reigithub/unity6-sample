@@ -1,8 +1,8 @@
 using Cysharp.Threading.Tasks;
+using Game.Contents.Enemy;
 using Game.Core;
 using Game.Core.MessagePipe;
 using Game.Core.Services;
-using Sample;
 using UnityEngine;
 
 namespace Game.Contents.Player
@@ -20,7 +20,7 @@ namespace Game.Contents.Player
             var assetService = GameServiceManager.Instance.GetService<AddressableAssetService>();
             var player = await assetService.InstantiateAsync("Assets/Prefabs/Player_SDUnityChan.prefab", transform);
 
-            // Memo: この辺、もう少しキレイにかけるはず...
+            // TODO: EnemyStartを作成して、そちらに移す
             var enemies = GameObject.FindGameObjectsWithTag("Enemy");
             foreach (var enemy in enemies)
             {

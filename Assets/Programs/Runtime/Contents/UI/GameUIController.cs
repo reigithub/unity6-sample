@@ -3,7 +3,7 @@ using Game.Core.Services;
 using UnityChan;
 using UnityEngine;
 
-namespace Sample
+namespace Game.Contents.UI
 {
     /// <summary>
     /// ゲームUIコントローラー
