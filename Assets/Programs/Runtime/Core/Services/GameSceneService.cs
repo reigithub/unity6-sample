@@ -201,9 +201,9 @@ namespace Game.Core.Services
         private async Task TerminateAllAsync()
         {
             // Memo: インスタンスを抹殺するので、逆から閉じないとオペレーションエラーになるヨ
-            foreach (var (type, gameScene) in Enumerable.Reverse(_gameScenes))
+            foreach (var (_, gameScene) in Enumerable.Reverse(_gameScenes))
             {
-                Debug.LogError($"Terminate Scene: {type.FullName}");
+                // Debug.LogError($"Terminate Scene: {type.FullName}");
 
                 if (gameScene != null)
                 {
