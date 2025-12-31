@@ -117,12 +117,12 @@ namespace Game.Contents.Scenes
             GlobalMessageBroker.GetSubscriber<int, Collider>()
                 .Subscribe(MessageKey.Player.OnTriggerEnter, handler: other =>
                 {
-                    // Memo: オブジェクトに応じてポイントを変更できるマスタを用意（GameStageItemMaster）
                     if (!other.gameObject.name.Contains("PickUp"))
                         return;
 
                     other.gameObject.SafeDestroy();
 
+                    // Memo: オブジェクトに応じてポイントを変更できるマスタを用意（GameStageItemMaster）
                     SceneModel.AddPoint(1);
                     SceneComponent.UpdateView();
                     if (SceneModel.IsClear())
@@ -134,12 +134,12 @@ namespace Game.Contents.Scenes
             GlobalMessageBroker.GetSubscriber<int, Collision>()
                 .Subscribe(MessageKey.Player.OnCollisionEnter, handler: other =>
                 {
-                    // Memo: エネミーに応じてダメージを変更できるマスタを用意（EnemyMaster）
                     if (!other.gameObject.name.Contains("Enemy"))
                         return;
 
                     other.gameObject.SafeDestroy();
 
+                    // Memo: エネミーに応じてダメージを変更できるマスタを用意（EnemyMaster）
                     SceneModel.PlayerHpDamaged(1);
                     SceneComponent.UpdateView();
                     if (SceneModel.IsFailed())

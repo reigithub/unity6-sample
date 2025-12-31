@@ -177,6 +177,21 @@ namespace Game.Contents.Player
             }
         }
 
+        public bool IsMoving()
+        {
+            return _speed > 0f;
+        }
+
+        public bool IsWalking()
+        {
+            return _speed >= _walkSpeed && _speed < _runSpeed;
+        }
+
+        public bool IsRunning()
+        {
+            return _speed >= _runSpeed;
+        }
+
         private bool IsGrounded()
         {
             return _groundedRaycastChecker.Check();

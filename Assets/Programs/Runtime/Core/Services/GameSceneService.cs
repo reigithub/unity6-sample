@@ -140,7 +140,7 @@ namespace Game.Core.Services
 
             // WARN: MonoBehaviourをnewしない方向で実装する必要がある…
             var gameScene = new TScene();
-            gameScene.Scene = gameScene; // コンポーネント側からダイアログ操作などを可能にするために、具象化クラスをベースクラスへ入れたい…（本当はMVCならモデルを渡すべきか）
+            gameScene.Scene = gameScene; // コンポーネント側からダイアログ操作などを可能にするために、具象化クラスをベースクラスへ入れたい…（本当はダイアログ操作部分だけを公開したいが）
             gameScene.StartupFilter = startup;
             var tcs = gameScene.ResultTcs = new UniTaskCompletionSource<TResult>();
             await TransitionCore(gameScene, isDialog: true);

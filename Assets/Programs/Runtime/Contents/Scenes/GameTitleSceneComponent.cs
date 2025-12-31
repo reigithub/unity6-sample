@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Game.Core;
 using Game.Core.Extensions;
 using Game.Core.MessagePipe;
@@ -17,24 +18,24 @@ namespace Game.Contents.Scenes
         {
             if (_startButton)
             {
-                _startButton.onClick.AddListener(() =>
-                {
-                    var master = MemoryDatabase.GameStageMasterTable.All
-                        .OrderBy(x => x.Id)
-                        .FirstOrDefault();
-                    if (master != null)
-                        SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, int>(master.Id).Forget();
-                    else
-                        SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, int>(1).Forget(); // 本来はエラーメッセージだして落とす
-
-                    GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Game.Start, true);
-                });
+                _startButton.onClick.AddListener(() => { StartStageAsync().Forget(); });
             }
 
             if (_quitButton)
             {
                 _quitButton.onClick.AddListener(() => { GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Game.Quit, true); });
             }
+        }
+
+        private async Task StartStageAsync()
+        {
+            var master = MemoryDatabase.GameStageMasterTable.All
+                .OrderBy(x => x.Id)
+                .FirstOrDefault();
+            var stageId = master?.Id ?? 1; // 本来はエラーメッセージだして落とす
+            await SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, int>(stageId);
+
+            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.Game.Start, true);
         }
     }
 }
