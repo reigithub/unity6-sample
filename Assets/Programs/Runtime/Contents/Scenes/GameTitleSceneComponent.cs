@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Game.Core.MessagePipe;
 using Game.Core.Scenes;
 using R3;
@@ -23,7 +22,7 @@ namespace Game.Contents.Scenes
                     .ThrottleFirst(TimeSpan.FromSeconds(3))
                     .SubscribeAwait(async (_, _) =>
                     {
-                        var master = MemoryDatabase.GameStageMasterTable.All
+                        var master = MemoryDatabase.StageMasterTable.All
                             .OrderBy(x => x.Id)
                             .FirstOrDefault();
                         var stageId = master?.Id ?? 1; // 本来はエラーメッセージだして落とす

@@ -24,7 +24,7 @@ namespace Game.Core.MasterData
 
         public static Type[] GetMemoryTableTypes()
         {
-            Assembly assembly = Assembly.GetAssembly(typeof(GameStageMaster));
+            Assembly assembly = Assembly.GetAssembly(typeof(StageMaster));
             // Assembly assembly = Assembly.GetExecutingAssembly();
 
             Type[] types = assembly.GetTypes();
@@ -155,37 +155,15 @@ namespace Game.Core.MasterData
 
             if (!File.Exists(tsvPath)) return;
 
-            var lines = File.ReadAllLines(tsvPath);
-            var columnIndexDict = lines
-                .First()
-                .Split(TsvColumnSeparator)
-                .Select((columnName, columnIndex) => (columnName, columnIndex))
-                .ToDictionary(x => x.columnName, x => x.columnIndex);
-
             var properties = GetMemoryTableProperties(memoryTableType);
 
-            var instances = new List<object>();
-            foreach (var line in lines.Skip(1))
-            {
-                var instance = Activator.CreateInstance(memoryTableType);
-                var values = line.Split(TsvColumnSeparator);
-
-                foreach (var property in properties)
-                {
-                    if (columnIndexDict.TryGetValue(property.Name, out var index))
-                    {
-                        var value = ConvertToType(values[index], property.PropertyType);
-                        property.SetValue(instance, value);
-                    }
-                }
-
-                instances.Add(instance);
-            }
+            var instances = ReadTsv(memoryTableType).ToArray();
 
             var tempPath = GetTsvTempPath(memoryTableName);
+
             string backupPath = backup ? GetTsvBackupPath(memoryTableName) : null;
 
-            WriteTsv(tempPath, instances.ToArray(), properties);
+            WriteTsv(tempPath, instances, properties);
 
             // atomic
             File.Replace(tempPath, tsvPath, backupPath);
@@ -253,6 +231,9 @@ namespace Game.Core.MasterData
                 .Select((name, index) => (name, index))
                 .ToDictionary(x => x.name, x => x.index);
             var properties = GetMemoryTableProperties(memoryTableType);
+            // var newColumnIndexDict = properties
+            //     .Select((property, columnIndex) => (columnName: property.Name, columnIndex))
+            //     .ToDictionary(x => x.columnName, x => x.columnIndex);
 
             foreach (var line in lines.Skip(1))
             {
@@ -265,6 +246,10 @@ namespace Game.Core.MasterData
                     {
                         var value = ConvertToType(values[index], property.PropertyType);
                         property.SetValue(instance, value);
+                    }
+                    else
+                    {
+                        property.SetValue(instance, null);
                     }
                 }
 

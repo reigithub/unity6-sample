@@ -8,10 +8,8 @@ using Game.Core.Services;
 using Game.Core.MessagePipe;
 using MessagePipe;
 using R3;
-using Sample;
 using UnityEngine;
 using UnityEngine.UI;
-
 
 namespace Game.Core
 {

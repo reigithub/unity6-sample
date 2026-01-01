@@ -1,5 +1,5 @@
 using Cysharp.Threading.Tasks;
-using Game.Core.MessagePipe;
+using Game.Core.MasterData;
 using Game.Core.Services;
 using UnityEngine;
 
@@ -10,26 +10,25 @@ namespace Game.Contents.Enemy
     /// </summary>
     public class EnemyStart : MonoBehaviour
     {
-        private GameServiceReference<MessageBrokerService> _messageBrokerService;
-        private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
+        private GameServiceReference<AddressableAssetService> _assetService;
+        private AddressableAssetService AssetService => _assetService.Reference;
 
-        public async UniTask LoadEnemyAsync(int stageId)
+        private GameServiceReference<MasterDataService> _masterDataService;
+        private MemoryDatabase MemoryDatabase => _masterDataService.Reference.MemoryDatabase;
+
+        public async UniTask LoadEnemyAsync(GameObject player, int stageId)
         {
-            var assetService = GameServiceManager.Instance.GetService<AddressableAssetService>();
-            var player = await assetService.InstantiateAsync("Assets/Prefabs/Player_SDUnityChan.prefab", transform);
+            var spawnMasters = MemoryDatabase.EnemySpawnMasterTable.FindByStageId(stageId);
 
-            // TODO: マスターデータで指定した位置にスポーンして、プレイヤーをセット
-            var enemies = GameObject.FindGameObjectsWithTag("Enemy");
-            foreach (var enemy in enemies)
+            foreach (var spawnMaster in spawnMasters)
             {
-                if (enemy.TryGetComponent<EnemyController>(out var enemyMovement))
+                var enemyMaster = MemoryDatabase.EnemyMasterTable.FindById(spawnMaster.EnemyId);
+                var enemy = await AssetService.InstantiateAsync(enemyMaster.AssetName, transform);
+                if (enemy.TryGetComponent<EnemyController>(out var enemyController))
                 {
-                    enemyMovement.SetPlayer(player);
+                    enemyController.Initialize(player, enemyMaster, spawnMaster);
                 }
             }
-
-            GlobalMessageBroker.GetPublisher<int, GameObject>()
-                .Publish(MessageKey.Player.SpawnPlayer, player);
         }
     }
 }

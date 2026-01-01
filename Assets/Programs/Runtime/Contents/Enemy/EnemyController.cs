@@ -1,4 +1,5 @@
 using Game.Contents.Player;
+using Game.Core.MasterData.MemoryTables;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -20,21 +21,33 @@ namespace Game.Contents.Enemy
         private float _viewAngle;
         private NavMeshHit _navMeshHit;
 
-        public void SetPlayer(GameObject player)
+        private EnemyMaster _enemyMaster;
+        private EnemySpawnMaster _enemySpawnMaster;
+
+        public EnemyMaster EnemyMaster => _enemyMaster;
+
+        public void Initialize(GameObject player, EnemyMaster enemyMaster, EnemySpawnMaster enemySpawnMaster)
         {
             _player = player;
             // _player.TryGetComponent<Rigidbody>(out _playerRigidbody);
             // _player.TryGetComponent<SDUnityChanPlayerController>(out _playerController);
-        }
 
-        private void Start()
-        {
+            _enemyMaster = enemyMaster;
+            _enemySpawnMaster = enemySpawnMaster;
+
             if (TryGetComponent<NavMeshAgent>(out var navMeshAgent))
             {
                 _navMeshAgent = navMeshAgent;
-                // _navMeshAgent.speed = 5f; // 速度値もマスタから入れる
-                _originPosition = transform.position; // 最初の位置はマスタから入れる？
+                SetSpeed(enemyMaster.WalkSpeed);
             }
+
+            _originPosition = new Vector3(enemySpawnMaster.PosX, enemySpawnMaster.PosY, enemySpawnMaster.PosZ);
+            transform.position = _originPosition;
+        }
+
+        private void SetSpeed(float speed)
+        {
+            _navMeshAgent.speed = speed;
         }
 
         private void Update()
@@ -52,6 +65,7 @@ namespace Game.Contents.Enemy
             if (!TryDetectPlayerByVision() && !TryDetectPlayerByRandom())
             {
                 // オリジナル位置に戻る
+                SetSpeed(_enemyMaster.WalkSpeed);
                 TrySetDestination(_originPosition);
             }
         }
@@ -95,6 +109,7 @@ namespace Game.Contents.Enemy
                     {
                         if (NavMesh.SamplePosition(_player.transform.position, out _navMeshHit, 1f, 1))
                         {
+                            SetSpeed(_enemyMaster.RunSpeed);
                             return TrySetDestination(_navMeshHit.position);
                         }
                     }
@@ -125,6 +140,7 @@ namespace Game.Contents.Enemy
 
                     // if (_playerController.IsMoving())
                     {
+                        SetSpeed(_enemyMaster.WalkSpeed);
                         return TrySetDestination(_navMeshHit.position);
                     }
                 }

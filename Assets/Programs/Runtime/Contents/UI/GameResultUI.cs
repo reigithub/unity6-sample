@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Game.Contents.Scenes;
+using Game.Core.Extensions;
 using Game.Core.MessagePipe;
 using Game.Core.Scenes;
 using Game.Core.Services;
@@ -43,6 +44,9 @@ namespace Game.Contents.UI
         private TextMeshProUGUI _result;
 
         [SerializeField]
+        private TextMeshProUGUI _time;
+
+        [SerializeField]
         private TextMeshProUGUI _point;
 
         [SerializeField]
@@ -62,17 +66,26 @@ namespace Game.Contents.UI
 
         public void Initialize(GameResultUIDialog dialog, GameStageResultData data)
         {
-            _result.text = data.StageResult == GameStageResult.Clear
-                ? "Clear!"
-                : "Failed...";
+            if (data.StageResult == GameStageResult.Clear)
+            {
+                _result.color = Color.orange;
+                _result.text = "Clear!";
+            }
+            else
+            {
+                _result.color = Color.red;
+                _result.text = "Failed...";
+            }
 
-            _point.text = data.Point.ToString();
+            _time.text = Mathf.Abs(data.CurrentTime - data.TotalTime).FormatToTimer();
+
+            _point.text = data.CurrentPoint.ToString();
             _maxPoint.text = data.MaxPoint.ToString();
 
-            _hp.text = data.PlayerHp.ToString();
+            _hp.text = data.PlayerCurrentHp.ToString();
             _maxHp.text = data.PlayerMaxHp.ToString();
 
-            _nextButton.gameObject.SetActive(data.NextStageId.HasValue);
+            _nextButton.gameObject.SetActive(data.StageResult is GameStageResult.Clear && data.NextStageId.HasValue);
             _nextButton.onClick.AddListener(() =>
             {
                 dialog.TrySetResult(true);
