@@ -23,10 +23,23 @@ namespace Game.Contents.Enemy
             foreach (var spawnMaster in spawnMasters)
             {
                 var enemyMaster = MemoryDatabase.EnemyMasterTable.FindById(spawnMaster.EnemyId);
-                var enemy = await AssetService.InstantiateAsync(enemyMaster.AssetName, transform);
-                if (enemy.TryGetComponent<EnemyController>(out var enemyController))
+                var enemyAsset = await AssetService.LoadAssetAsync<GameObject>(enemyMaster.AssetName);
+
+                var spawnCount = Random.Range(spawnMaster.MinSpawnCount, spawnMaster.MaxSpawnCount);
+
+                for (int i = 0; i < spawnCount; i++)
                 {
-                    enemyController.Initialize(player, enemyMaster, spawnMaster);
+                    // WARN: 一体ずつ配置位置を決めるのが面倒なので生成地点を中心としたランダムな位置に生成する
+                    var randomX = Random.Range(-spawnMaster.X, spawnMaster.X);
+                    var randomY = Random.Range(1f, spawnMaster.Y);
+                    var randomZ = Random.Range(-spawnMaster.Z, spawnMaster.Z);
+                    var randomOffset = new Vector3(randomX, randomY, randomZ);
+
+                    var enemy = Instantiate(enemyAsset, transform.position + randomOffset, Quaternion.identity, transform);
+                    if (enemy.TryGetComponent<EnemyController>(out var enemyController))
+                    {
+                        enemyController.Initialize(player, enemyMaster);
+                    }
                 }
             }
         }

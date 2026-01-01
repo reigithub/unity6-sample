@@ -1,5 +1,8 @@
+using System.Linq;
 using Game.Core.MessagePipe;
 using Game.Core.Services;
+using R3;
+using R3.Triggers;
 using UnityChan;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -78,9 +81,73 @@ namespace Game.Contents.Player
             TryGetComponent<Animator>(out _animator);
             TryGetComponent<Rigidbody>(out _rigidbody);
             TryGetComponent<RaycastChecker>(out _groundedRaycastChecker);
+
+            // _animator.Play("Salute");
+
+            var triggers = _animator.GetBehaviours<ObservableStateMachineTrigger>();
+            // Debug.LogError($"---Length ObservableStateMachineTrigger: {triggers.Length}");
+            triggers.Select(x => x.OnStateEnterAsObservable())
+                .Merge()
+                .Subscribe(info => UpdateStateInfo(info.StateInfo, true))
+                .AddTo(this);
+            triggers.Select(x => x.OnStateExitAsObservable())
+                .Merge()
+                .Subscribe(info => UpdateStateInfo(info.StateInfo, false))
+                .AddTo(this);
+        }
+
+        private bool _isJumping;
+        private bool _isDamaged;
+        private bool _isDown;
+
+        private void UpdateStateInfo(AnimatorStateInfo stateInfo, bool enter)
+        {
+            if (stateInfo.IsName("Base Layer.LocomotionState.JumpState.Jumping"))
+            {
+                _isJumping = enter;
+            }
+            else if (stateInfo.IsName("Base Layer.Damaged"))
+            {
+                _isDamaged = enter;
+            }
+            else if (stateInfo.IsName("Base Layer.GoDown"))
+            {
+                if (enter) _isDown = true;
+            }
+            else if (stateInfo.IsName("Base Layer.DownToUp"))
+            {
+                if (!enter) _isDown = false;
+            }
+            else
+            {
+                if (enter) Debug.LogError($"---Enter ObservableStateMachineTrigger: {stateInfo.fullPathHash}");
+                if (!enter) Debug.LogError($"---Exit ObservableStateMachineTrigger: {stateInfo.fullPathHash}");
+            }
+        }
+
+        private bool CanMove()
+        {
+            return !_isDamaged && !_isDown;
+        }
+
+        private bool CanJump()
+        {
+            return !_isJumping && !_isDamaged && !_isDown && IsGrounded();
         }
 
         private void Update()
+        {
+            MoveInput();
+            JumpInput();
+        }
+
+        private void FixedUpdate()
+        {
+            Move();
+            Jump();
+        }
+
+        private void MoveInput()
         {
             // 移動入力受付
             _moveValue = _player.Move.ReadValue<Vector2>();
@@ -100,27 +167,13 @@ namespace Game.Contents.Player
             {
                 _lookRotation = Quaternion.LookRotation(_moveVector);
             }
-
-            // ジャンプ入力受付
-            // 押した瞬間のみ検知
-            if (!_jumpTriggered && _player.Jump.WasPressedThisFrame())
-            {
-                if (IsGrounded())
-                {
-                    _animator.SetTrigger(Animator.StringToHash("Jump"));
-                    _jumpTriggered = true;
-                }
-            }
-        }
-
-        private void FixedUpdate()
-        {
-            Move();
-            Jump();
         }
 
         private void Move()
         {
+            if (!CanMove())
+                return;
+
             // カメラの向きに合わせる
             if (_mainCamera)
             {
@@ -161,19 +214,29 @@ namespace Game.Contents.Player
             // }
         }
 
+        private void JumpInput()
+        {
+            // ジャンプ入力受付
+            // 押した瞬間のみ検知
+            if (!_jumpTriggered && _player.Jump.WasPressedThisFrame())
+            {
+                if (CanJump())
+                {
+                    _animator.SetTrigger(Animator.StringToHash("Jump"));
+                    _jumpTriggered = true;
+                }
+            }
+        }
+
         private void Jump()
         {
             if (_jumpTriggered && _player.Jump.IsPressed())
             {
                 // _rigidbody.linearDamping = 0.2f;
-                // _rigidbody.linearVelocity = new Vector3(_rigidbody.linearVelocity.x, _jumpPower, _rigidbody.linearVelocity.z);
-                _rigidbody.AddForce(Vector3.up * _jumpForce, ForceMode.Impulse);
-
-                if (IsGrounded())
-                {
-                    _animator.ResetTrigger(Animator.StringToHash("Jump"));
-                    _jumpTriggered = false;
-                }
+                _rigidbody.linearVelocity = new Vector3(_rigidbody.linearVelocity.x, _jumpForce, _rigidbody.linearVelocity.z);
+                // _rigidbody.AddForce(Vector3.up * _jumpForce, ForceMode.Impulse);
+                // _animator.ResetTrigger(Animator.StringToHash("Jump"));
+                _jumpTriggered = false;
             }
         }
 
@@ -205,6 +268,11 @@ namespace Game.Contents.Player
         private void OnCollisionEnter(Collision other)
         {
             GlobalMessageBroker.GetPublisher<int, Collision>().Publish(MessageKey.Player.OnCollisionEnter, other);
+
+            if (other.gameObject.CompareTag("Enemy"))
+            {
+                _animator.SetTrigger(Animator.StringToHash("Damaged"));
+            }
         }
 
         #region SDUnityChanInputSystem.IPlayerActions

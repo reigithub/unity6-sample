@@ -15,34 +15,24 @@ namespace Game.Contents.Enemy
         // private Rigidbody _playerRigidbody;
         // private SDUnityChanPlayerController _playerController;
         private NavMeshAgent _navMeshAgent;
-        private Vector3 _originPosition;
 
         private float _distance;
         private float _viewAngle;
         private NavMeshHit _navMeshHit;
 
         private EnemyMaster _enemyMaster;
-        private EnemySpawnMaster _enemySpawnMaster;
-
         public EnemyMaster EnemyMaster => _enemyMaster;
 
-        public void Initialize(GameObject player, EnemyMaster enemyMaster, EnemySpawnMaster enemySpawnMaster)
+        public void Initialize(GameObject player, EnemyMaster enemyMaster)
         {
             _player = player;
-            // _player.TryGetComponent<Rigidbody>(out _playerRigidbody);
-            // _player.TryGetComponent<SDUnityChanPlayerController>(out _playerController);
-
             _enemyMaster = enemyMaster;
-            _enemySpawnMaster = enemySpawnMaster;
 
             if (TryGetComponent<NavMeshAgent>(out var navMeshAgent))
             {
                 _navMeshAgent = navMeshAgent;
-                SetSpeed(enemyMaster.WalkSpeed);
+                SetSpeed(_enemyMaster.WalkSpeed);
             }
-
-            _originPosition = new Vector3(enemySpawnMaster.PosX, enemySpawnMaster.PosY, enemySpawnMaster.PosZ);
-            transform.position = _originPosition;
         }
 
         private void SetSpeed(float speed)
@@ -54,27 +44,34 @@ namespace Game.Contents.Enemy
         {
             if (!_player) return;
 
-            DetectPlayerOrReturn();
+            DetectPlayerOrPatrol();
         }
 
-        private void DetectPlayerOrReturn()
+        private void DetectPlayerOrPatrol()
         {
+            // TODO: StateMachine化の検討
+
             _distance = Vector3.Distance(_player.transform.position, transform.position);
 
             // プレイヤー探索
-            if (!TryDetectPlayerByVision() && !TryDetectPlayerByRandom())
+            bool detected = TryDetectPlayerByVision();
+            if (!detected) detected = TryDetectPlayerByAudio();
+
+            if (!detected)
             {
-                // オリジナル位置に戻る
-                SetSpeed(_enemyMaster.WalkSpeed);
-                TrySetDestination(_originPosition);
+                RandomPatrol();
+            }
+            else
+            {
+                ResetPatrolRotation();
             }
         }
 
         private bool TryDetectPlayerByVision()
         {
             //視覚で感知
-            // if (_distance > 25f)
-            if (_distance > 5f)
+            // if (_distance > 5f)
+            if (_distance > _enemyMaster.VisualDistance)
                 return false;
 
             Vector3 distance = transform.position - _player.transform.position;
@@ -110,7 +107,7 @@ namespace Game.Contents.Enemy
                         if (NavMesh.SamplePosition(_player.transform.position, out _navMeshHit, 1f, 1))
                         {
                             SetSpeed(_enemyMaster.RunSpeed);
-                            return TrySetDestination(_navMeshHit.position);
+                            return TrySetDestination(_navMeshHit.position, ignoreDistance: true);
                         }
                     }
                 }
@@ -119,29 +116,32 @@ namespace Game.Contents.Enemy
             return false;
         }
 
-        private bool TryDetectPlayerByRandom()
+        private bool TryDetectPlayerByAudio()
         {
-            if (_distance > 3f)
+            // if (_distance > 3f)
+            if (_distance > _enemyMaster.AuditoryDistance)
                 return false;
 
             // if (_playerRigidbody.linearVelocity.magnitude > 0.1f)
             // if (_playerController.IsMoving())
             {
-                float x = _player.transform.position.x + Random.Range(-2f, 2f);
-                float z = _player.transform.position.z + Random.Range(-2f, 2f);
+                var distance = _enemyMaster.AuditoryDistance;
+                float x = _player.transform.position.x + Random.Range(-distance, distance);
+                float z = _player.transform.position.z + Random.Range(-distance, distance);
 
                 if (NavMesh.SamplePosition(new Vector3(x, 0f, z), out _navMeshHit, 1f, 1))
                 {
                     var forward = _player.transform.position - transform.position;
                     forward.y = 0f;
+
                     var lookRotation = Quaternion.LookRotation(forward);
-                    var slerp = Quaternion.Slerp(transform.rotation, lookRotation, 5f * Time.fixedDeltaTime);
+                    var slerp = Quaternion.Slerp(transform.rotation, lookRotation, 5f * Time.deltaTime);
                     transform.rotation = slerp;
 
                     // if (_playerController.IsMoving())
                     {
                         SetSpeed(_enemyMaster.WalkSpeed);
-                        return TrySetDestination(_navMeshHit.position);
+                        return TrySetDestination(_navMeshHit.position, ignoreDistance: true);
                     }
                 }
             }
@@ -149,12 +149,52 @@ namespace Game.Contents.Enemy
             return false;
         }
 
-        private bool TrySetDestination(Vector3 position)
+        private float _rotationInterval = 5.0f;
+        private float _rotationIntervalCount;
+        private float _remainingDistance = 0.5f;
+
+        private void RandomPatrol()
         {
-            if (_navMeshAgent && _navMeshAgent.pathStatus != NavMeshPathStatus.PathInvalid)
+            SetSpeed(_enemyMaster.WalkSpeed);
+
+            _rotationIntervalCount += Time.deltaTime;
+
+            var randomPos = transform.position + new Vector3(Random.Range(-10f, 10f), 0f, Random.Range(-10f, 10f));
+            TrySetDestination(randomPos, remainingDistance: _remainingDistance);
+
+            // Debug.LogError($"{nameof(EnemyController)} {_enemyMaster.Id} {_enemyMaster.Name} currentPos:{transform.position} speed:{_navMeshAgent.speed}");
+            // Debug.DrawRay(transform.position + new Vector3(0, 0.5f, 0), transform.forward * 5f, Color.red);
+
+            if (_rotationIntervalCount > _rotationInterval)
             {
-                _navMeshAgent.SetDestination(position);
-                return true;
+                var forward = new Vector3(0f, Random.Range(0f, 180f), 0f);
+                var lookRotation = Quaternion.LookRotation(forward);
+                var slerp = Quaternion.Slerp(transform.rotation, lookRotation, 10f * Time.deltaTime);
+                transform.rotation = slerp;
+                // transform.rotation = Quaternion.Euler(forward);
+                ResetPatrolRotation();
+            }
+        }
+
+        private void ResetPatrolRotation()
+        {
+            _rotationIntervalCount = 0f;
+            _rotationInterval = Random.Range(3f, 8f);
+            _remainingDistance = Random.Range(0.3f, 0.8f);
+        }
+
+        private bool TrySetDestination(Vector3 position, bool ignoreDistance = false, float remainingDistance = 0.5f)
+        {
+            if (_navMeshAgent)
+            {
+                if (!ignoreDistance && _navMeshAgent.remainingDistance > remainingDistance)
+                    return false;
+
+                if (_navMeshAgent.pathStatus != NavMeshPathStatus.PathInvalid)
+                {
+                    _navMeshAgent.SetDestination(position);
+                    return true;
+                }
             }
 
             return false;

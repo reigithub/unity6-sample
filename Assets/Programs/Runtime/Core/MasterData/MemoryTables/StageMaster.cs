@@ -11,6 +11,8 @@ namespace Game.Core.MasterData.MemoryTables
 
         public string Name { get; set; }
 
+        public string AssetName { get; set; }
+
         public int TotalTime { get; set; }
 
         public int MaxPoint { get; set; }

@@ -14,8 +14,11 @@ namespace Game.Core.MasterData.MemoryTables
 
         public int EnemyId { get; set; }
 
-        public int PosX { get; set; }
-        public int PosY { get; set; }
-        public int PosZ { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Z { get; set; }
+
+        public int MinSpawnCount { get; set; }
+        public int MaxSpawnCount { get; set; }
     }
 }

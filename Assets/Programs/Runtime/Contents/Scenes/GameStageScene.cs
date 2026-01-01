@@ -33,7 +33,7 @@ namespace Game.Contents.Scenes
         public override async Task<GameObject> LoadAsset()
         {
             var instance = await base.LoadAsset();
-            _stageSceneInstance = await AssetService.LoadSceneAsync(SceneModel.StageMaster.Name);
+            _stageSceneInstance = await AssetService.LoadSceneAsync(SceneModel.StageMaster.AssetName);
             return instance;
         }
 
@@ -186,9 +186,8 @@ namespace Game.Contents.Scenes
             GlobalMessageBroker.GetSubscriber<int, Collision>()
                 .Subscribe(MessageKey.Player.OnCollisionEnter, handler: other =>
                 {
-                    if (!other.gameObject.CompareTag("Enemy"))
-                        return;
-
+                    // if (!other.gameObject.CompareTag("Enemy"))
+                    //     return;
                     if (!other.gameObject.transform.parent.TryGetComponent<EnemyController>(out var enemyController))
                         return;
 
