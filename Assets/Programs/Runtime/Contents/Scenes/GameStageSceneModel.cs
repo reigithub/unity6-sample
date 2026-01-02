@@ -55,7 +55,7 @@ namespace Game.Contents.Scenes
         public int PlayerCurrentHp { get; set; }
         public int PlayerMaxHp { get; set; }
 
-        public float PlayerStamina { get; set; }
+        public float PlayerCurrentStamina { get; set; }
         public float PlayerMaxStamina { get; set; }
 
         public GameStageSceneModel()
@@ -72,10 +72,12 @@ namespace Game.Contents.Scenes
             TotalTime = stageMaster.TotalTime;
             CurrentPoint = 0;
             MaxPoint = stageMaster.MaxPoint;
-            PlayerCurrentHp = stageMaster.PlayerMaxHp;
-            PlayerMaxHp = stageMaster.PlayerMaxHp;
-            // PlayerStamina = 100f;
-            // PlayerMaxStamina = 100f;
+
+            // Memo: プレイヤー情報はPlayerMasterを作成するか検討
+            PlayerCurrentHp = 100;
+            PlayerMaxHp = 100;
+            PlayerCurrentStamina = 100f;
+            PlayerMaxStamina = 100f;
         }
 
         public void ProgressTime()
@@ -92,6 +94,11 @@ namespace Game.Contents.Scenes
         public void PlayerHpDamaged(int hpDamage)
         {
             PlayerCurrentHp = Mathf.Clamp(PlayerCurrentHp - hpDamage, 0, PlayerMaxHp);
+        }
+
+        public bool CanRun()
+        {
+            return PlayerCurrentStamina > 0f;
         }
 
         public bool IsTimeUp()

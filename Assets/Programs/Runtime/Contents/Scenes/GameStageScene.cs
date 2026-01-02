@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Game.Contents.Enemy;
+using Game.Contents.Player;
 using Game.Contents.UI;
 using Game.Core.Extensions;
 using Game.Core.MessagePipe;
@@ -22,6 +23,8 @@ namespace Game.Contents.Scenes
         private int _stageId;
         private SceneInstance _stageSceneInstance;
 
+        private PlayerStart _playerStart;
+
         public Task PreInitialize(int stageId)
         {
             _stageId = stageId;
@@ -42,12 +45,15 @@ namespace Game.Contents.Scenes
             RegisterEvents();
 
             // プレイヤー爆誕の儀
-            var playerStart = GameSceneHelper.GetPlayerStart(_stageSceneInstance.Scene);
-            var player = await playerStart.LoadPlayerAsync();
+            _playerStart = GameSceneHelper.GetPlayerStart(_stageSceneInstance.Scene);
+            var player = await _playerStart.LoadPlayerAsync();
 
             // エネミー生成
-            var enemyStart = GameSceneHelper.GetEnemyStart(_stageSceneInstance.Scene);
-            await enemyStart.LoadEnemyAsync(player, _stageId);
+            var enemyStarts = GameSceneHelper.GetEnemyStarts(_stageSceneInstance.Scene);
+            foreach (var enemyStart in enemyStarts)
+            {
+                await enemyStart.LoadEnemyAsync(player, _stageId);
+            }
 
             // Memo: ビューがモデルの変更を検知する方法については賛否あると思われるが一旦は愚直に渡す
             // (ReactivePropertyとか疎結合化は後ほど検討する)
@@ -55,12 +61,16 @@ namespace Game.Contents.Scenes
             await base.Startup();
         }
 
-        public override Task Ready()
+        public override async Task Ready()
         {
             // ゲーム開始準備OKの合図
-            SceneComponent.DoFadeInView();
-            GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.Ready, true);
-            return base.Ready();
+            SceneModel.StageState = GameStageState.Ready;
+            //カウントダウンしてスタート
+            await GameCountdownUIDialog.RunAsync();
+            SceneModel.StageState = GameStageState.Start;
+            SceneComponent.DoFadeIn();
+            _playerStart.PlayerHUD.DoFadeIn();
+            await base.Ready();
         }
 
         public override async Task Terminate()
@@ -80,42 +90,16 @@ namespace Game.Contents.Scenes
                 {
                     SceneModel.ProgressTime();
                     SceneComponent.UpdateLimitTime();
-                    if (SceneModel.IsFailed())
-                    {
-                        GlobalMessageBroker.GetAsyncPublisher<int, GameStageResult>().Publish(MessageKey.GameStage.Result, GameStageResult.Failed);
-                    }
+                    TryShowResultDialogAsync().Forget();
                 })
                 .AddTo(SceneComponent);
 
-            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Ready, handler: async (_, _) =>
-                {
-                    SceneModel.StageState = GameStageState.Ready;
-                    //カウントダウンしてスタート
-                    await GameCountdownUIDialog.RunAsync();
-                    GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.GameStage.Start, true);
-                })
-                .AddTo(SceneComponent);
-            GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Start, handler: _ =>
-                {
-                    SceneModel.StageState = GameStageState.Start;
-                    // UI操作可能になるタイミング
-                })
-                .AddTo(SceneComponent);
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
                 .Subscribe(MessageKey.GameStage.Pause, handler: async (_, _) =>
                 {
                     if (!SceneModel.CanPause()) return;
                     // 一時停止メニュー
                     await GamePauseUIDialog.RunAsync();
-                })
-                .AddTo(SceneComponent);
-            GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Resume, handler: _ =>
-                {
-                    // 一時停止メニューを閉じる
-                    SceneService.TerminateAsync<GamePauseUIDialog>().Forget();
                 })
                 .AddTo(SceneComponent);
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
@@ -134,17 +118,6 @@ namespace Game.Contents.Scenes
                 })
                 .AddTo(SceneComponent);
 
-            GlobalMessageBroker.GetAsyncSubscriber<int, GameStageResult>()
-                .Subscribe(MessageKey.GameStage.Result, handler: async (result, _) =>
-                {
-                    // リザルト画面
-                    SceneModel.StageState = GameStageState.Result;
-                    SceneModel.StageResult = result;
-                    SceneComponent.DoFadeOutView();
-                    // Debug.LogError($"Stage Result: {result}");
-                    await GameResultUIDialog.RunAsync(SceneModel.CreateStageResult());
-                })
-                .AddTo(SceneComponent);
             GlobalMessageBroker.GetAsyncSubscriber<int, int?>()
                 .Subscribe(MessageKey.GameStage.Finish, handler: async (nextStageId, _) =>
                 {
@@ -165,7 +138,6 @@ namespace Game.Contents.Scenes
 
 
             // プレイヤー設定
-            // Memo: MessageBrokerからMessageBroker呼ぶのもアレなので、リファクタリングを検討
             GlobalMessageBroker.GetSubscriber<int, Collider>()
                 .Subscribe(MessageKey.Player.OnTriggerEnter, handler: other =>
                 {
@@ -177,10 +149,7 @@ namespace Game.Contents.Scenes
                     // Memo: オブジェクトに応じてポイントを変更できるマスタを用意（StageItemMaster）
                     SceneModel.AddPoint(1);
                     SceneComponent.UpdateView();
-                    if (SceneModel.IsClear())
-                    {
-                        GlobalMessageBroker.GetAsyncPublisher<int, GameStageResult>().Publish(MessageKey.GameStage.Result, GameStageResult.Clear);
-                    }
+                    TryShowResultDialogAsync().Forget();
                 })
                 .AddTo(SceneComponent);
             GlobalMessageBroker.GetSubscriber<int, Collision>()
@@ -197,13 +166,34 @@ namespace Game.Contents.Scenes
 
                     // Memo: エネミーに応じてダメージを変更できるマスタを用意（EnemyMaster）
                     SceneModel.PlayerHpDamaged(hpDamage);
-                    SceneComponent.UpdateView();
-                    if (SceneModel.IsFailed())
-                    {
-                        GlobalMessageBroker.GetAsyncPublisher<int, GameStageResult>().Publish(MessageKey.GameStage.Result, GameStageResult.Failed);
-                    }
+
+                    _playerStart.PlayerHUD.CurrentHp.Value = SceneModel.PlayerCurrentHp;
+
+                    TryShowResultDialogAsync().Forget();
                 })
                 .AddTo(SceneComponent);
+        }
+
+        private async Task TryShowResultDialogAsync()
+        {
+            if (SceneModel.IsClear())
+            {
+                SceneModel.StageResult = GameStageResult.Clear;
+            }
+
+            if (SceneModel.IsFailed())
+            {
+                SceneModel.StageResult = GameStageResult.Failed;
+            }
+
+            if (SceneModel.StageResult is GameStageResult.None)
+                return;
+
+            SceneModel.StageState = GameStageState.Result;
+            SceneComponent.DoFadeOut();
+            _playerStart.PlayerHUD.DoFadeOut();
+            // Debug.LogError($"Stage Result: {result}");
+            await GameResultUIDialog.RunAsync(SceneModel.CreateStageResult());
         }
     }
 }
