@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DG.Tweening;
 using Game.Core.Extensions;
 using Game.Core.Scenes;
+using R3;
 using TMPro;
 using UnityEngine;
 
@@ -17,24 +18,16 @@ namespace Game.Contents.Scenes
         [SerializeField] private TextMeshProUGUI _currentPoint;
         [SerializeField] private TextMeshProUGUI _maxPoint;
 
-        private GameStageSceneModel _sceneModel;
-
         public Task Initialize(GameStageSceneModel sceneModel)
         {
-            _sceneModel = sceneModel;
-            UpdateView();
+            _limitTime.text = sceneModel.CurrentTime.Value.FormatToTimer();
+            _currentPoint.text = sceneModel.CurrentPoint.ToString();
+            _maxPoint.text = sceneModel.MaxPoint.ToString();
+
+            sceneModel.CurrentTime.DistinctUntilChanged().Subscribe(x => { _limitTime.text = x.FormatToTimer(); }).AddTo(this);
+            sceneModel.CurrentPoint.DistinctUntilChanged().Subscribe(x => { _currentPoint.text = x.ToString(); }).AddTo(this);
+
             return Task.CompletedTask;
-        }
-
-        public void UpdateLimitTime()
-        {
-            _limitTime.text = _sceneModel.CurrentTime.FormatToTimer();
-        }
-
-        public void UpdateView()
-        {
-            _currentPoint.text = _sceneModel.CurrentPoint.ToString();
-            _maxPoint.text = _sceneModel.MaxPoint.ToString();
         }
 
         private void Awake()

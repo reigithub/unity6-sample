@@ -88,7 +88,6 @@ namespace Game.Contents.Scenes
                 .Subscribe(_ =>
                 {
                     SceneModel.ProgressTime();
-                    SceneComponent.UpdateLimitTime();
                     TryShowResultDialogAsync().Forget();
                 })
                 .AddTo(SceneComponent);
@@ -147,15 +146,16 @@ namespace Game.Contents.Scenes
 
                     // Memo: オブジェクトに応じてポイントを変更できるマスタを用意（StageItemMaster）
                     SceneModel.AddPoint(1);
-                    SceneComponent.UpdateView();
+                    // SceneComponent.UpdateView();
                     TryShowResultDialogAsync().Forget();
                 })
                 .AddTo(SceneComponent);
             GlobalMessageBroker.GetSubscriber<int, Collision>()
                 .Subscribe(MessageKey.Player.OnCollisionEnter, handler: other =>
                 {
-                    // if (!other.gameObject.CompareTag("Enemy"))
-                    //     return;
+                    if (!other.gameObject.CompareTag("Enemy"))
+                        return;
+
                     if (!other.gameObject.transform.parent.TryGetComponent<EnemyController>(out var enemyController))
                         return;
 
