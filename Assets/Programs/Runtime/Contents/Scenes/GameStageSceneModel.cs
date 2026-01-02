@@ -1,6 +1,7 @@
 using System;
+using Game.Core.MasterData;
 using Game.Core.MasterData.MemoryTables;
-using R3;
+using Game.Core.Services;
 using UnityEngine;
 
 namespace Game.Contents.Scenes
@@ -40,7 +41,11 @@ namespace Game.Contents.Scenes
 
     public class GameStageSceneModel
     {
+        private GameServiceReference<MasterDataService> _masterDataService;
+        protected MemoryDatabase MemoryDatabase => _masterDataService.Reference.MemoryDatabase;
+
         public StageMaster StageMaster { get; private set; }
+        public PlayerMaster PlayerMaster { get; private set; }
 
         // Memo: データの持ち方は後日検討するとして、一旦動くものを作成
         public GameStageState StageState { get; set; }
@@ -64,9 +69,12 @@ namespace Game.Contents.Scenes
             StageResult = GameStageResult.None;
         }
 
-        public void Initialize(StageMaster stageMaster)
+        public void Initialize(int stageId)
         {
+            var stageMaster = MemoryDatabase.StageMasterTable.FindById(stageId);
+            var playerMaster = MemoryDatabase.PlayerMasterTable.FindById(stageMaster.PlayerId ?? 1);
             StageMaster = stageMaster;
+            PlayerMaster = playerMaster;
 
             CurrentTime = stageMaster.TotalTime;
             TotalTime = stageMaster.TotalTime;
@@ -74,10 +82,10 @@ namespace Game.Contents.Scenes
             MaxPoint = stageMaster.MaxPoint;
 
             // Memo: プレイヤー情報はPlayerMasterを作成するか検討
-            PlayerCurrentHp = 100;
-            PlayerMaxHp = 100;
-            PlayerCurrentStamina = 100f;
-            PlayerMaxStamina = 100f;
+            PlayerCurrentHp = playerMaster.MaxHp;
+            PlayerMaxHp = playerMaster.MaxHp;
+            PlayerCurrentStamina = playerMaster.MaxStamina;
+            PlayerMaxStamina = playerMaster.MaxStamina;
         }
 
         public void ProgressTime()

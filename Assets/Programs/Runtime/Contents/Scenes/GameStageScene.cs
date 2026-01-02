@@ -28,8 +28,7 @@ namespace Game.Contents.Scenes
         public Task PreInitialize(int stageId)
         {
             _stageId = stageId;
-            var stageMaster = MemoryDatabase.StageMasterTable.FindById(_stageId);
-            SceneModel.Initialize(stageMaster);
+            SceneModel.Initialize(stageId);
             return Task.CompletedTask;
         }
 
@@ -46,7 +45,7 @@ namespace Game.Contents.Scenes
 
             // プレイヤー爆誕の儀
             _playerStart = GameSceneHelper.GetPlayerStart(_stageSceneInstance.Scene);
-            var player = await _playerStart.LoadPlayerAsync();
+            var player = await _playerStart.LoadPlayerAsync(SceneModel.PlayerMaster);
 
             // エネミー生成
             var enemyStarts = GameSceneHelper.GetEnemyStarts(_stageSceneInstance.Scene);
