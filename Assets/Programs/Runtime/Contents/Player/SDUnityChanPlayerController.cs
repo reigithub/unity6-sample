@@ -1,4 +1,5 @@
 using System.Linq;
+using Game.Core.MasterData.MemoryTables;
 using Game.Core.MessagePipe;
 using Game.Core.Services;
 using R3;
@@ -51,8 +52,11 @@ namespace Game.Contents.Player
         private Quaternion _lookRotation = Quaternion.identity;
         private bool _jumpTriggered;
 
-        public void Initialize()
+        public void Initialize(PlayerMaster playerMaster)
         {
+            _walkSpeed = playerMaster.WalkSpeed;
+            _jogSpeed = playerMaster.JogSpeed;
+            _runSpeed = playerMaster.RunSpeed;
         }
 
         public void SetMainCamera(Transform mainCamera)

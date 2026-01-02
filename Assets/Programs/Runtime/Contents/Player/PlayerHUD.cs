@@ -1,8 +1,5 @@
-using System;
-using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using Game.Core.MessagePipe;
-using Game.Core.Services;
+using Game.Core.MasterData.MemoryTables;
 using R3;
 using TMPro;
 using UnityEngine;
@@ -27,15 +24,11 @@ namespace Game.Contents.Player
         [SerializeField] private TextMeshProUGUI _currentStamina;
         [SerializeField] private TextMeshProUGUI _maxStamina;
 
-        private GameServiceReference<MessageBrokerService> _messageBrokerService;
-        private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
-
         public readonly ReactiveProperty<int> CurrentHp = new();
-        public int _maxHpValue = 100;
+        public float _maxHpValue = 100;
 
         public readonly ReactiveProperty<float> CurrentStamina = new();
         public float _maxStaminaValue = 100f;
-
         public float _staminaDepleteRate = 10f;
         public float _staminaRegenRate = 5f;
         public bool _isRunning;
@@ -45,26 +38,31 @@ namespace Game.Contents.Player
             _uiCanvasGroup.alpha = 0f;
         }
 
-        public void Initialize()
+        public void Initialize(PlayerMaster playerMaster)
         {
             CurrentHp.DistinctUntilChanged()
                 .Subscribe(x =>
                 {
                     _currentHp.text = x.ToString();
-                    _hpGauge.value = x / 100f;
+                    _hpGauge.value = x / _maxHpValue;
                 }).AddTo(this);
             CurrentStamina.DistinctUntilChanged()
                 .Subscribe(x =>
                 {
                     _currentStamina.text = x.ToString("0");
-                    _staminaGauge.value = x / 100f;
+                    _staminaGauge.value = x / _maxStaminaValue;
                 }).AddTo(this);
 
-            CurrentHp.Value = _maxHpValue;
-            CurrentStamina.Value = _maxStaminaValue;
+            _maxHpValue = playerMaster.MaxHp;
+            _maxStaminaValue = playerMaster.MaxStamina;
+            _staminaDepleteRate = playerMaster.StaminaDepleteRate;
+            _staminaRegenRate = playerMaster.StaminaRegenRate;
 
-            _maxHp.text = _maxHpValue.ToString();
-            _maxStamina.text = _maxStaminaValue.ToString("0");
+            CurrentHp.Value = playerMaster.MaxHp;
+            _maxHp.text = playerMaster.MaxHp.ToString();
+
+            CurrentStamina.Value = playerMaster.MaxStamina;
+            _maxStamina.text = playerMaster.MaxStamina.ToString();
         }
 
         private　void Update()
@@ -85,7 +83,6 @@ namespace Game.Contents.Player
         {
             _isRunning = isRunning;
         }
-
 
         public void DoFadeIn()
         {

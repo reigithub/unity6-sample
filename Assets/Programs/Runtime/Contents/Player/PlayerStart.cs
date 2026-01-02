@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Game.Core.MasterData;
 using Game.Core.MessagePipe;
 using Game.Core.Services;
 using MessagePipe;
@@ -16,6 +17,9 @@ namespace Game.Contents.Player
         private GameServiceReference<AddressableAssetService> _assetService;
         private AddressableAssetService AssetService => _assetService.Reference;
 
+        private GameServiceReference<MasterDataService> _masterDataService;
+        private MemoryDatabase MemoryDatabase => _masterDataService.Reference.MemoryDatabase;
+
         private GameServiceReference<MessageBrokerService> _messageBrokerService;
         private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
 
@@ -25,18 +29,20 @@ namespace Game.Contents.Player
 
         public async UniTask<GameObject> LoadPlayerAsync(int playerId = 1)
         {
+            var playerMaster = MemoryDatabase.PlayerMasterTable.FindById(playerId);
+
             var player = await AssetService.InstantiateAsync("Player_SDUnityChan", transform);
             if (player.TryGetComponent<SDUnityChanPlayerController>(out var playerController))
             {
                 PlayerController = playerController;
-                PlayerController.Initialize();
+                PlayerController.Initialize(playerMaster);
             }
 
             var playerHUD = await AssetService.InstantiateAsync("PlayerHUD", transform);
             if (playerHUD.TryGetComponent<PlayerHUD>(out var hud))
             {
                 PlayerHUD = hud;
-                PlayerHUD.Initialize();
+                PlayerHUD.Initialize(playerMaster);
             }
 
             PlayerController
