@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Game.Contents.Enemy;
+using Game.Contents.Item;
 using Game.Contents.Player;
 using Game.Core.Constants;
 using UnityEngine;
@@ -101,6 +102,11 @@ namespace Game.Core.Scenes
         public static EnemyStart[] GetEnemyStarts(Scene scene)
         {
             return GetComponentsInChildren<EnemyStart>(scene);
+        }
+
+        public static StageItemStart[] GetStageItemStarts(Scene scene)
+        {
+            return GetComponentsInChildren<StageItemStart>(scene);
         }
 
         public static T GetComponentInChildren<T>(Scene scene) where T : MonoBehaviour

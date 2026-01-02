@@ -11,6 +11,7 @@ using R3;
 using R3.Triggers;
 using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
+using Random = System.Random;
 
 namespace Game.Contents.Scenes
 {
@@ -54,9 +55,15 @@ namespace Game.Contents.Scenes
                 await enemyStart.LoadEnemyAsync(player, _stageId);
             }
 
-            // Memo: ビューがモデルの変更を検知する方法については賛否あると思われるが一旦は愚直に渡す
-            // (ReactivePropertyとか疎結合化は後ほど検討する)
+            // ステージアイテム生成
+            var stageItemStarts = GameSceneHelper.GetStageItemStarts(_stageSceneInstance.Scene);
+            foreach (var stageItemStart in stageItemStarts)
+            {
+                await stageItemStart.LoadStageItemAsync(_stageId);
+            }
+
             await SceneComponent.Initialize(SceneModel);
+
             await base.Startup();
         }
 
@@ -139,14 +146,17 @@ namespace Game.Contents.Scenes
             GlobalMessageBroker.GetSubscriber<int, Collider>()
                 .Subscribe(MessageKey.Player.OnTriggerEnter, handler: other =>
                 {
-                    if (!other.gameObject.name.Contains("PickUp"))
+                    if (!other.gameObject.CompareTag("StageItem"))
                         return;
+
+                    // 今はとりあえず一番近いやつでOK
+                    var itemMaster = MemoryDatabase.StageItemMasterTable.FindClosestByAssetName(other.name);
+                    var point = itemMaster?.Point ?? 1;
 
                     other.gameObject.SafeDestroy();
 
-                    // Memo: オブジェクトに応じてポイントを変更できるマスタを用意（StageItemMaster）
-                    SceneModel.AddPoint(1);
-                    // SceneComponent.UpdateView();
+                    SceneModel.AddPoint(point);
+
                     TryShowResultDialogAsync().Forget();
                 })
                 .AddTo(SceneComponent);
@@ -156,12 +166,12 @@ namespace Game.Contents.Scenes
                     if (!other.gameObject.CompareTag("Enemy"))
                         return;
 
-                    if (!other.gameObject.transform.parent.TryGetComponent<EnemyController>(out var enemyController))
+                    if (!other.transform.parent.TryGetComponent<EnemyController>(out var enemyController))
                         return;
 
                     var hpDamage = enemyController.EnemyMaster.HpAttack;
 
-                    other.gameObject.SafeDestroy();
+                    other.transform.parent.SafeDestroy();
 
                     // Memo: エネミーに応じてダメージを変更できるマスタを用意（EnemyMaster）
                     SceneModel.PlayerHpDamaged(hpDamage);
