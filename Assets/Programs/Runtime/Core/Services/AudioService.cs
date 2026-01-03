@@ -55,9 +55,11 @@ namespace Game.Core.Services
             var audioClip = await Addressables.LoadAssetAsync<AudioClip>(cueName);
             _bgmSource.DOFade(0f, 1f).onComplete += () =>
             {
+                _bgmSource.Stop();
                 _bgmSource.clip = audioClip;
                 _bgmSource.volume = 0f;
                 _bgmSource.mute = false;
+                _bgmSource.loop = true;
                 _bgmSource.Play();
                 _bgmSource.DOFade(1f, 1f);
             };
@@ -68,6 +70,7 @@ namespace Game.Core.Services
             var audioClip = await Addressables.LoadAssetAsync<AudioClip>(cueName);
             _voiceSource.volume = 1f;
             _voiceSource.mute = false;
+            _voiceSource.loop = false;
             _voiceSource.PlayOneShot(audioClip);
         }
 
@@ -76,6 +79,7 @@ namespace Game.Core.Services
             var audioClip = await Addressables.LoadAssetAsync<AudioClip>(cueName);
             _sfxSource.volume = 1f;
             _sfxSource.mute = false;
+            _sfxSource.loop = false;
             _sfxSource.PlayOneShot(audioClip);
         }
     }

@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Bgm
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Bgm
+  m_GUID: d8208fb6e83fbc945abd041028ba0c0e
+  m_SerializeEntries:
+  - m_GUID: 033766cc31c97904bae4404b8a079544
+    m_Address: 8bit_Track1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 06906d718be5b6a4cb2df8732bf39832
+    m_Address: 8bit_Track5
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0ad591428b0c18c4da51fe3bf98dbc63
+    m_Address: 8bit_Track7
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1f2ad53bacc245642854dbdc8ea71a9b
+    m_Address: 8bit_Track10
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 35967e8a4dfb1664e9b066939272c0a4
+    m_Address: 8bit_Track9
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 51a4f1157b7ff1449b5e5cf064d584c7
+    m_Address: 8bit_Track4
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 559c232a43caebe41870ce54786f604e
+    m_Address: 8bit_Track3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 89f935015cc98724a862a586326fdf21
+    m_Address: 8bit_Track6
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bef0cef2ded0f0645ad90c6e5bdd4965
+    m_Address: 8bit_Track8
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fc5af015011ea3745b7f78ea1dd1049f
+    m_Address: 8bit_Track2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: be8c7bfaed8f7eb428b95bd26a52c525, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: db3370ae8167a4f488fbe52ef4fe03bb, type: 2}
+    - {fileID: 11400000, guid: 0081eb8af63a6a14780d65e4cd3fc5e9, type: 2}

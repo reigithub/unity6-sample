@@ -16,7 +16,7 @@ namespace Game.Contents.Scenes
 {
     public class GameStageScene : GamePrefabScene<GameStageScene, GameStageSceneComponent>, IGameSceneModel<GameStageSceneModel>, IGameSceneArg<int>
     {
-        protected override string AssetPathOrAddress => "Assets/Prefabs/GameStageScene.prefab";
+        protected override string AssetPathOrAddress => "GameStageScene";
 
         public GameStageSceneModel SceneModel { get; set; }
 

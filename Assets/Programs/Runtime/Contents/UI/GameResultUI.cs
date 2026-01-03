@@ -12,7 +12,7 @@ namespace Game.Contents.UI
 {
     public class GameResultUIDialog : GameDialogScene<GameResultUIDialog, GameResultUI, bool>
     {
-        protected override string AssetPathOrAddress => "Assets/Prefabs/UI/GameResultUI.prefab";
+        protected override string AssetPathOrAddress => "GameResultUI";
 
         public static Task<bool> RunAsync(GameStageResultData data)
         {

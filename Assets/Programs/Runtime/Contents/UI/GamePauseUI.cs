@@ -9,7 +9,7 @@ namespace Game.Contents.UI
 {
     public class GamePauseUIDialog : GameDialogScene<GamePauseUIDialog, GamePauseUI, bool>
     {
-        protected override string AssetPathOrAddress => "Assets/Prefabs/UI/GamePauseUI.prefab";
+        protected override string AssetPathOrAddress => "GamePauseUI";
 
         public static Task<bool> RunAsync()
         {
