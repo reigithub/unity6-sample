@@ -80,6 +80,8 @@ namespace Game.Contents.Scenes
             SceneModel.StageState = GameStageState.Ready;
             //カウントダウンしてスタート
             await GameCountdownUIDialog.RunAsync();
+            await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.System.TimeScale, true);
+            await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.System.Cursor, false);
             SceneModel.StageState = GameStageState.Start;
             SceneComponent.DoFadeIn();
             _playerStart.PlayerHUD.DoFadeIn();

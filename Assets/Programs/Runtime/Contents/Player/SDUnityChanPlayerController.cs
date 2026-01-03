@@ -1,4 +1,5 @@
 using System.Linq;
+using Game.Core.Extensions;
 using Game.Core.MasterData.MemoryTables;
 using Game.Core.MessagePipe;
 using Game.Core.Services;
@@ -34,6 +35,9 @@ namespace Game.Contents.Player
         [Header("ジャンプ力")]
         [SerializeField]
         private float _jump = 5.0f;
+
+        private GameServiceReference<AudioService> _audioService;
+        private AudioService AudioService => _audioService.Reference;
 
         private GameServiceReference<MessageBrokerService> _messageBrokerService;
         private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
@@ -230,6 +234,8 @@ namespace Game.Contents.Player
         {
             if (_jumpTriggered && _player.Jump.IsPressed())
             {
+                AudioService.PlayVoiceAsync("univ0001").Forget();
+
                 // _rigidbody.linearDamping = 0.2f;
                 _rigidbody.linearVelocity = new Vector3(_rigidbody.linearVelocity.x, _jump, _rigidbody.linearVelocity.z);
                 // _rigidbody.AddForce(Vector3.up * _jumpForce, ForceMode.Impulse);
