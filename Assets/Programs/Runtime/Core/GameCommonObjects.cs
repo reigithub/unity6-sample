@@ -13,9 +13,12 @@ using UnityEngine.UI;
 
 namespace Game.Core
 {
+    /// <summary>
+    /// ゲーム全体に関わるオブジェクトを管理する
+    /// </summary>
     public class GameCommonObjects : MonoBehaviour
     {
-        private const string Address = "Assets/Prefabs/GameCommonObjects.prefab";
+        private const string Address = "GameCommonObjects";
 
         public static GameCommonObjects Instance { get; private set; }
 
@@ -42,6 +45,8 @@ namespace Game.Core
         }
 
         [SerializeField] private GameObject _mainCamera;
+        [SerializeField] private GameObject _directionalLight;
+        [SerializeField] private Skybox _skybox;
         [SerializeField] private PlayerFollowCameraController _playerFollowCameraController;
 
         [SerializeField] private GameUIController _gameUIController;
@@ -56,11 +61,13 @@ namespace Game.Core
 
         // Memo: どこに持つかは要検討としてマーク
         private bool _gameStart;
+        private Material _defaultSkyboxMaterial;
 
         private void Initialize()
         {
             _gameUIController.Initialize();
             _fadeImage.color = new Color(_fadeImage.color.r, _fadeImage.color.g, _fadeImage.color.b, 1f);
+            if (_skybox) _defaultSkyboxMaterial = _skybox.material;
             Subscribe();
         }
 
@@ -88,6 +95,24 @@ namespace Game.Core
                     }
 
                     return UniTask.CompletedTask;
+                })
+                .AddTo(this);
+            GlobalMessageBroker.GetSubscriber<int, bool>()
+                .Subscribe(MessageKey.System.DirectionalLight, handler: status =>
+                {
+                    if (_directionalLight) _directionalLight.SetActive(status);
+                })
+                .AddTo(this);
+            GlobalMessageBroker.GetSubscriber<int, Material>()
+                .Subscribe(MessageKey.System.Skybox, handler: material =>
+                {
+                    if (_skybox) _skybox.material = material;
+                })
+                .AddTo(this);
+            GlobalMessageBroker.GetSubscriber<int, bool>()
+                .Subscribe(MessageKey.System.DefaultSkybox, handler: _ =>
+                {
+                    if (_skybox) _skybox.material = _defaultSkyboxMaterial;
                 })
                 .AddTo(this);
 

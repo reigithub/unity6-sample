@@ -11,7 +11,6 @@ using R3;
 using R3.Triggers;
 using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
-using Random = System.Random;
 
 namespace Game.Contents.Scenes
 {
@@ -37,6 +36,14 @@ namespace Game.Contents.Scenes
         {
             var instance = await base.LoadAsset();
             _stageSceneInstance = await AssetService.LoadSceneAsync(SceneModel.StageMaster.AssetName);
+
+            // ステージアセットに設定されたSkyboxをメインカメラに反映
+            var skybox = GameSceneHelper.GetSkybox(_stageSceneInstance.Scene);
+            if (skybox)
+            {
+                GlobalMessageBroker.GetPublisher<int, Material>().Publish(MessageKey.System.Skybox, skybox.material);
+            }
+
             return instance;
         }
 
@@ -81,6 +88,7 @@ namespace Game.Contents.Scenes
 
         public override async Task Terminate()
         {
+            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.System.DefaultSkybox, true);
             await AssetService.UnloadSceneAsync(_stageSceneInstance);
             await base.Terminate();
         }
@@ -175,7 +183,6 @@ namespace Game.Contents.Scenes
 
                     other.gameObject.SafeDestroy();
 
-                    // Memo: エネミーに応じてダメージを変更できるマスタを用意（EnemyMaster）
                     SceneModel.PlayerHpDamaged(hpDamage);
 
                     _playerStart.PlayerHUD.CurrentHp.Value = SceneModel.PlayerCurrentHp;

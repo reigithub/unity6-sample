@@ -50,6 +50,7 @@ namespace Game.Core
             GameStartAsync().Forget();
         }
 
+        // ゲーム環境設定を読み込む機能（開発とか本番とか）
         private void LoadConfig()
         {
             _gameConfig ??= GameConfigManager.Load();

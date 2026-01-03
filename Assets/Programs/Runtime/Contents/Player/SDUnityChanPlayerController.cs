@@ -33,7 +33,7 @@ namespace Game.Contents.Player
 
         [Header("ジャンプ力")]
         [SerializeField]
-        private float _jumpForce = 5.0f;
+        private float _jump = 5.0f;
 
         private GameServiceReference<MessageBrokerService> _messageBrokerService;
         private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
@@ -57,6 +57,7 @@ namespace Game.Contents.Player
             _walkSpeed = playerMaster.WalkSpeed;
             _jogSpeed = playerMaster.JogSpeed;
             _runSpeed = playerMaster.RunSpeed;
+            _jump = playerMaster.Jump;
         }
 
         public void SetMainCamera(Transform mainCamera)
@@ -240,7 +241,7 @@ namespace Game.Contents.Player
             if (_jumpTriggered && _player.Jump.IsPressed())
             {
                 // _rigidbody.linearDamping = 0.2f;
-                _rigidbody.linearVelocity = new Vector3(_rigidbody.linearVelocity.x, _jumpForce, _rigidbody.linearVelocity.z);
+                _rigidbody.linearVelocity = new Vector3(_rigidbody.linearVelocity.x, _jump, _rigidbody.linearVelocity.z);
                 // _rigidbody.AddForce(Vector3.up * _jumpForce, ForceMode.Impulse);
                 // _animator.ResetTrigger(Animator.StringToHash("Jump"));
                 _jumpTriggered = false;
