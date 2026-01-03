@@ -13,7 +13,7 @@ namespace Game.Contents.Player
     /// <summary>
     /// SD-Unityちゃん用のプレイヤーコントローラー
     /// </summary>
-    public class SDUnityChanPlayerController : MonoBehaviour, SDUnityChanInputSystem.IPlayerActions
+    public class SDUnityChanPlayerController : MonoBehaviour //, SDUnityChanInputSystem.IPlayerActions
     {
         [Header("歩く速度")]
         [SerializeField]
@@ -52,51 +52,22 @@ namespace Game.Contents.Player
         private Quaternion _lookRotation = Quaternion.identity;
         private bool _jumpTriggered;
 
+        private bool _isJumping;
+        private bool _isDamaged;
+        private bool _isDown;
+
         public void Initialize(PlayerMaster playerMaster)
         {
             _walkSpeed = playerMaster.WalkSpeed;
             _jogSpeed = playerMaster.JogSpeed;
             _runSpeed = playerMaster.RunSpeed;
             _jump = playerMaster.Jump;
-        }
 
-        public void SetMainCamera(Transform mainCamera)
-        {
-            _mainCamera = mainCamera;
-        }
-
-        private void Awake()
-        {
-            _inputSystem = new SDUnityChanInputSystem();
-            _player = _inputSystem.Player;
-            _inputSystem.Player.SetCallbacks(this);
-        }
-
-        private void OnEnable()
-        {
-            _inputSystem.Enable();
-            _player.Enable();
-        }
-
-        private void OnDisable()
-        {
-            _inputSystem.Disable();
-            _player.Disable();
-        }
-
-        private void OnDestroy()
-        {
-            _inputSystem.Dispose();
-        }
-
-        private void Start()
-        {
             TryGetComponent<Animator>(out _animator);
             TryGetComponent<Rigidbody>(out _rigidbody);
             TryGetComponent<RaycastChecker>(out _groundedRaycastChecker);
 
             // _animator.Play("Salute");
-
             var triggers = _animator.GetBehaviours<ObservableStateMachineTrigger>();
             // Debug.LogError($"---Length ObservableStateMachineTrigger: {triggers.Length}");
             triggers.Select(x => x.OnStateEnterAsObservable())
@@ -108,10 +79,6 @@ namespace Game.Contents.Player
                 .Subscribe(info => UpdateStateInfo(info.StateInfo, false))
                 .AddTo(this);
         }
-
-        private bool _isJumping;
-        private bool _isDamaged;
-        private bool _isDown;
 
         private void UpdateStateInfo(AnimatorStateInfo stateInfo, bool enter)
         {
@@ -138,14 +105,37 @@ namespace Game.Contents.Player
             }
         }
 
-        private bool CanMove()
+        public void SetMainCamera(Transform mainCamera)
         {
-            return !_isDamaged && !_isDown;
+            _mainCamera = mainCamera;
         }
 
-        private bool CanJump()
+        private void Awake()
         {
-            return !_isJumping && !_isDamaged && !_isDown && IsGrounded();
+            _inputSystem = new SDUnityChanInputSystem();
+            _player = _inputSystem.Player;
+            // _inputSystem.Player.SetCallbacks(this);
+        }
+
+        private void OnEnable()
+        {
+            _inputSystem.Enable();
+            _player.Enable();
+        }
+
+        private void OnDisable()
+        {
+            _inputSystem.Disable();
+            _player.Disable();
+        }
+
+        private void OnDestroy()
+        {
+            _inputSystem.Dispose();
+        }
+
+        private void Start()
+        {
         }
 
         private void Update()
@@ -248,6 +238,16 @@ namespace Game.Contents.Player
             }
         }
 
+        private bool CanMove()
+        {
+            return !_isDamaged && !_isDown;
+        }
+
+        private bool CanJump()
+        {
+            return !_isJumping && !_isDamaged && !_isDown && IsGrounded();
+        }
+
         public bool IsMoving()
         {
             return _speed > 0f;
@@ -295,53 +295,5 @@ namespace Game.Contents.Player
                 _animator.SetTrigger(Animator.StringToHash("Damaged"));
             }
         }
-
-        #region SDUnityChanInputSystem.IPlayerActions
-
-        public void OnMove(InputAction.CallbackContext context)
-        {
-        }
-
-        public void OnLook(InputAction.CallbackContext context)
-        {
-        }
-
-        public void OnAttack(InputAction.CallbackContext context)
-        {
-        }
-
-        public void OnJump(InputAction.CallbackContext context)
-        {
-        }
-
-        public void OnPrevious(InputAction.CallbackContext context)
-        {
-        }
-
-        public void OnNext(InputAction.CallbackContext context)
-        {
-        }
-
-        public void OnReset(InputAction.CallbackContext context)
-        {
-        }
-
-        public void OnLeftAlt(InputAction.CallbackContext context)
-        {
-        }
-
-        public void OnLeftControl(InputAction.CallbackContext context)
-        {
-        }
-
-        public void OnLeftShift(InputAction.CallbackContext context)
-        {
-        }
-
-        public void OnMouseScrollY(InputAction.CallbackContext context)
-        {
-        }
-
-        #endregion
     }
 }

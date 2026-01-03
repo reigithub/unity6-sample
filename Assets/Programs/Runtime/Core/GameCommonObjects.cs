@@ -68,10 +68,10 @@ namespace Game.Core
             _gameUIController.Initialize();
             _fadeImage.color = new Color(_fadeImage.color.r, _fadeImage.color.g, _fadeImage.color.b, 1f);
             if (_skybox) _defaultSkyboxMaterial = _skybox.material;
-            Subscribe();
+            RegisterEvents();
         }
 
-        private void Subscribe()
+        private void RegisterEvents()
         {
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
                 .Subscribe(MessageKey.System.TimeScale, handler: (status, _) =>

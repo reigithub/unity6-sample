@@ -46,6 +46,7 @@ namespace Game.Core.Services
             GlobalMessageBroker.AddMessageBroker<int, int>();
             GlobalMessageBroker.AddMessageBroker<int, int?>();
             GlobalMessageBroker.AddMessageBroker<int, bool>();
+            GlobalMessageBroker.AddMessageBroker<int, string>();
 
             GlobalMessageBroker.AddMessageBroker<int, GameObject>();
             GlobalMessageBroker.AddMessageBroker<int, Collision>();

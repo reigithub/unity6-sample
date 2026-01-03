@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Sample
+namespace Game.Contents.Item
 {
     /// <summary>
     /// オブジェクトを回転させる

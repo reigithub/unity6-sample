@@ -1318,6 +1318,10 @@ PrefabInstance:
       propertyPath: m_showUI
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 11400088, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 11419662, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
       propertyPath: m_rootUI
       value: 
