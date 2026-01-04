@@ -58,7 +58,7 @@ namespace Game.Core.Services
         {
             var audioClip = await Addressables.LoadAssetAsync<AudioClip>(assetName);
             if (_bgmSource.isPlaying)
-                _bgmSource.DOFade(0f, 1f).onComplete += () => { PlayBgmCore(); };
+                _bgmSource.DOFade(0f, 0.5f).onComplete += () => { PlayBgmCore(); };
             else
                 PlayBgmCore();
 
@@ -73,7 +73,15 @@ namespace Game.Core.Services
                 _bgmSource.mute = false;
                 _bgmSource.loop = true;
                 _bgmSource.Play();
-                _bgmSource.DOFade(1f, 1f);
+                _bgmSource.DOFade(0.5f, 0.25f); // 一旦うるさいので50%
+            }
+        }
+
+        public void StopBgm()
+        {
+            if (_bgmSource.isPlaying)
+            {
+                _bgmSource.DOFade(0f, 0.25f).onComplete += () => { _bgmSource.Stop(); };
             }
         }
 

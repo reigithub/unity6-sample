@@ -79,6 +79,7 @@ namespace Game.Contents.Scenes
         {
             // ゲーム開始準備OKの合図
             SceneModel.StageState = GameStageState.Ready;
+            AudioService.PlayRandomAsync(AudioCategory.Bgm, AudioPlayTag.StageReady).Forget();
             AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageReady).Forget();
             //カウントダウンしてスタート
             await GameCountdownUIDialog.RunAsync();
@@ -97,6 +98,7 @@ namespace Game.Contents.Scenes
         {
             GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.System.DefaultSkybox, true);
             await AssetService.UnloadSceneAsync(_stageSceneInstance);
+            AudioService.StopBgm();
             await base.Terminate();
         }
 
@@ -158,7 +160,7 @@ namespace Game.Contents.Scenes
                 .Subscribe(MessageKey.GameStage.Finish, handler: async (nextStageId, token) =>
                 {
                     SceneModel.StageState = GameStageState.Finish;
-                    await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageFinish, token);
+                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageFinish, token).Forget();
                     if (nextStageId.HasValue)
                     {
                         // 次のステージへ
@@ -240,9 +242,9 @@ namespace Game.Contents.Scenes
             _playerStart.PlayerHUD.DoFadeOut();
 
             if (SceneModel.StageResult is GameStageResult.Clear)
-                await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageClear);
+                AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageClear).Forget();
             else
-                await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageFailed);
+                AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageFailed).Forget();
 
             // Debug.LogError($"Stage Result: {result}");
             await GameResultUIDialog.RunAsync(SceneModel.CreateStageResult());
