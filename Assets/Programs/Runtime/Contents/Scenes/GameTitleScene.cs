@@ -6,7 +6,7 @@ namespace Game.Contents.Scenes
 {
     public class GameTitleScene : GamePrefabScene<GameTitleScene, GameTitleSceneComponent>
     {
-        protected override string AssetPathOrAddress => "GameTitleScene2";
+        protected override string AssetPathOrAddress => "GameTitleScene";
 
         public override Task Startup()
         {

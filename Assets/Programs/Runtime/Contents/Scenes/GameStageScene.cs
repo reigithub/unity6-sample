@@ -79,9 +79,12 @@ namespace Game.Contents.Scenes
         {
             // ゲーム開始準備OKの合図
             SceneModel.StageState = GameStageState.Ready;
-            AudioService.PlayRandomOneAsync(AudioPlayTag.StageReady).Forget();
+            await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.System.TimeScale, false);
+            await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.System.Cursor, true);
+            var audioTask = AudioService.PlayRandomOneAsync(AudioPlayTag.StageReady);
             //カウントダウンしてスタート
             await GameCountdownUIDialog.RunAsync();
+            await audioTask;
             await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.System.TimeScale, true);
             await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.System.Cursor, false);
             GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.InputSystem.Escape, true);

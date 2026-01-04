@@ -49,7 +49,8 @@
 
         public struct Player
         {
-            public const int SpawnPlayer = Offset.Player + 0;
+            public const int PlayAnimation = Offset.Player + 0;
+            public const int SpawnPlayer = Offset.Player + 1;
             public const int OnTriggerEnter = Offset.Player + 10;
             public const int OnCollisionEnter = Offset.Player + 20;
         }

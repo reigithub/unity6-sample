@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Game.Core.Constants;
 using Game.Core.Extensions;
 using Game.Core.MessagePipe;
 using Game.Core.Scenes;
@@ -24,7 +25,6 @@ namespace Game.Contents.Scenes
                     .SubscribeAwait(async (_, token) =>
                     {
                         SetInteractable(false);
-                        // await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.GameStart, token);
                         await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.Game.Start, true, token);
 
                         // 今のところプレイモードは１つなので
@@ -43,7 +43,6 @@ namespace Game.Contents.Scenes
                     .SubscribeAwait(async (_, token) =>
                     {
                         SetInteractable(false);
-                        // await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.GameQuit);
                         await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.Game.Quit, true, token);
                     })
                     .AddTo(this);
@@ -60,8 +59,7 @@ namespace Game.Contents.Scenes
 
         public void OnReady()
         {
-            if (_animator) _animator.Play("Salute"); // MessageBrokerで起動できるようにする
-
+            GlobalMessageBroker.GetPublisher<int, string>().Publish(MessageKey.Player.PlayAnimation, PlayerConstants.GameTitleSceneAnimatorStateName);
             GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.Game.Ready, true);
         }
     }
