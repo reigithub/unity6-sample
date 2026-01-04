@@ -91,8 +91,7 @@ namespace Game.Contents.UI
             _nextButton.gameObject.SetActive(showNext);
             if (showNext)
             {
-                _nextButton.OnClickAsObservable()
-                    .ThrottleFirst(TimeSpan.FromSeconds(3f))
+                _nextButton.OnClickAsObservableThrottleFirst()
                     .SubscribeAwait(async (_, token) =>
                     {
                         SetInteractable(false);
@@ -102,8 +101,7 @@ namespace Game.Contents.UI
                     .AddTo(this);
             }
 
-            _returnButton.OnClickAsObservable()
-                .ThrottleFirst(TimeSpan.FromSeconds(3f))
+            _returnButton.OnClickAsObservableThrottleFirst()
                 .SubscribeAwait(async (_, token) =>
                 {
                     SetInteractable(false);

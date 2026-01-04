@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Game.Core.Enums;
 using Game.Core.Extensions;
 using Game.Core.MessagePipe;
 using Game.Core.Scenes;
@@ -21,9 +20,7 @@ namespace Game.Contents.Scenes
         {
             if (_startButton)
             {
-                _startButton
-                    .OnClickAsObservable()
-                    .ThrottleFirst(TimeSpan.FromSeconds(3))
+                _startButton.OnClickAsObservableThrottleFirst()
                     .SubscribeAwait(async (_, token) =>
                     {
                         SetInteractable(false);
@@ -42,9 +39,7 @@ namespace Game.Contents.Scenes
 
             if (_quitButton)
             {
-                _quitButton
-                    .OnClickAsObservable()
-                    .ThrottleFirst(TimeSpan.FromSeconds(3))
+                _quitButton.OnClickAsObservableThrottleFirst()
                     .SubscribeAwait(async (_, token) =>
                     {
                         SetInteractable(false);

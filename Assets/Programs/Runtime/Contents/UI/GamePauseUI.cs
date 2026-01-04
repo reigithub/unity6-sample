@@ -65,8 +65,7 @@ namespace Game.Contents.UI
 
         public void Initialize(GamePauseUIDialog dialog)
         {
-            _resumeButton.OnClickAsObservable()
-                .ThrottleFirst(TimeSpan.FromSeconds(OnClickInterval))
+            _resumeButton.OnClickAsObservableThrottleFirst()
                 .SubscribeAwait(async (_, token) =>
                 {
                     SetInteractable(false);
@@ -78,24 +77,21 @@ namespace Game.Contents.UI
                     // dialog.Terminate();
                 })
                 .AddTo(this);
-            _retryButton.OnClickAsObservable()
-                .ThrottleFirst(TimeSpan.FromSeconds(OnClickInterval))
+            _retryButton.OnClickAsObservableThrottleFirst()
                 .SubscribeAwait(async (_, token) =>
                 {
                     SetInteractable(false);
                     await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameStage.Retry, true, token);
                 })
                 .AddTo(this);
-            _returnButton.OnClickAsObservable()
-                .ThrottleFirst(TimeSpan.FromSeconds(OnClickInterval))
+            _returnButton.OnClickAsObservableThrottleFirst()
                 .SubscribeAwait(async (_, token) =>
                 {
                     SetInteractable(false);
                     await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameStage.ReturnTitle, true, token);
                 })
                 .AddTo(this);
-            _quitButton.OnClickAsObservable()
-                .ThrottleFirst(TimeSpan.FromSeconds(OnClickInterval))
+            _quitButton.OnClickAsObservableThrottleFirst()
                 .SubscribeAwait(async (_, token) =>
                 {
                     SetInteractable(false);
