@@ -37,7 +37,7 @@ namespace Game.Core.Scenes
             {
                 buttons.Select(x => x.OnClickAsObservable())
                     .Merge()
-                    .Subscribe(_ => { AudioService.PlayRandomAsync(AudioCategory.SoundEffect, AudioPlayTag.UIButton).Forget(); })
+                    .Subscribe(_ => { AudioService.PlayRandomOneAsync(AudioCategory.SoundEffect, AudioPlayTag.UIButton).Forget(); })
                     .AddTo(this);
             }
         }

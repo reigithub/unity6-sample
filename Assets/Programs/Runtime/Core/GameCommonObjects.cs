@@ -120,25 +120,20 @@ namespace Game.Core
 
             // Game
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.Game.Ready, handler: async (_, token) =>
-                {
-                    await AudioService.PlayRandomAsync(AudioCategory.Bgm, AudioPlayTag.GameReady, token);
-                    await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.GameReady, token);
-                })
+                .Subscribe(MessageKey.Game.Ready, handler: async (_, token) => { await AudioService.PlayRandomOneAsync(AudioPlayTag.GameReady, token); })
                 .AddTo(this);
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
                 .Subscribe(MessageKey.Game.Start, handler: async (_, token) =>
                 {
                     AudioService.StopBgm();
-                    await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.GameStart, token);
-                    await AudioService.PlayRandomAsync(AudioCategory.SoundEffect, AudioPlayTag.GameStart, token);
+                    await AudioService.PlayRandomOneAsync(AudioPlayTag.GameStart, token);
                 })
                 .AddTo(this);
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
                 .Subscribe(MessageKey.Game.Quit, handler: async (_, token) =>
                 {
                     AudioService.StopBgm();
-                    await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.GameQuit, token);
+                    await AudioService.PlayRandomOneAsync(AudioCategory.Voice, AudioPlayTag.GameQuit, token);
                     GameManager.Instance.GameQuit();
                 })
                 .AddTo(this);

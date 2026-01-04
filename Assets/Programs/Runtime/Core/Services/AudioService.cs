@@ -132,7 +132,7 @@ namespace Game.Core.Services
             await Task.Delay(TimeSpan.FromSeconds(audioClip.length), token);
             return;
 
-            // Memo: ループなどの制御を検討
+            // Memo: 複数リクエスト、ループなどの制御を検討
             void PlayVoiceCore()
             {
                 _voiceSource.Stop();
@@ -166,9 +166,58 @@ namespace Game.Core.Services
             }
         }
 
-        public async Task PlayRandomAsync(AudioCategory audioCategory, AudioPlayTag audioPlayTag, CancellationToken token = default)
+        public Task PlayAsync(AudioCategory audioCategory, string audioName, CancellationToken token = default)
         {
-            var cueNames = MemoryDatabase.AudioPlayTagsMasterTable.FindByAudioPlayTag((int)audioPlayTag)
+            switch (audioCategory)
+            {
+                case AudioCategory.Bgm:
+                    return PlayBgmAsync(audioName);
+                case AudioCategory.Voice:
+                    return PlayVoiceAsync(audioName, token);
+                case AudioCategory.SoundEffect:
+                    return PlaySoundEffectAsync(audioName, token);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// 全カテゴリで再生できるものを流す
+        /// </summary>
+        public async Task PlayRandomOneAsync(AudioPlayTag audioPlayTag, CancellationToken token = default)
+        {
+            var categories = Enum.GetValues(typeof(AudioCategory)).Cast<int>().ToHashSet();
+            var byCategory = MemoryDatabase.AudioPlayTagsMasterTable.FindByAudioPlayTag((int)audioPlayTag)
+                .Select(x =>
+                {
+                    if (!MemoryDatabase.AudioMasterTable.TryFindById(x.AudioId, out var audioMaster))
+                        return (0, null);
+
+                    if (!categories.Contains(audioMaster.AudioCategory))
+                        return (0, null);
+
+                    return (audioMaster.AudioCategory, audioMaster.AssetName);
+                })
+                .Where(x => x.AudioCategory > 0)
+                .GroupBy(x => x.AudioCategory, x => x.AssetName)
+                .ToDictionary(x => x.Key, x => x.ToArray());
+            if (byCategory.Count <= 0)
+                return;
+
+            foreach (var (audioCategory, audioNames) in byCategory)
+            {
+                var index = UnityEngine.Random.Range(0, audioNames.Length);
+                var audioName = audioNames[index];
+                await PlayAsync((AudioCategory)audioCategory, audioName, token);
+            }
+        }
+
+        /// <summary>
+        /// 特定カテゴリで再生できるものを流す
+        /// </summary>
+        public Task PlayRandomOneAsync(AudioCategory audioCategory, AudioPlayTag audioPlayTag, CancellationToken token = default)
+        {
+            var audioNames = MemoryDatabase.AudioPlayTagsMasterTable.FindByAudioPlayTag((int)audioPlayTag)
                 .Select(x =>
                 {
                     if (!MemoryDatabase.AudioMasterTable.TryFindById(x.AudioId, out var audioMaster))
@@ -181,26 +230,12 @@ namespace Game.Core.Services
                 })
                 .Where(x => x != null)
                 .ToArray();
-            if (cueNames.Length <= 0)
-                return;
+            if (audioNames.Length <= 0)
+                return Task.CompletedTask;
 
-            var cueIndex = UnityEngine.Random.Range(0, cueNames.Length);
-            var cueName = cueNames[cueIndex];
-
-            switch (audioCategory)
-            {
-                case AudioCategory.Bgm:
-                    await PlayBgmAsync(cueName);
-                    break;
-                case AudioCategory.Voice:
-                {
-                    await PlayVoiceAsync(cueName, token);
-                    break;
-                }
-                case AudioCategory.SoundEffect:
-                    await PlaySoundEffectAsync(cueName, token);
-                    break;
-            }
+            var index = UnityEngine.Random.Range(0, audioNames.Length);
+            var audioName = audioNames[index];
+            return PlayAsync(audioCategory, audioName, token);
         }
     }
 }

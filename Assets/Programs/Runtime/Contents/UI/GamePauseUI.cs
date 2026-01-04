@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Cysharp.Threading.Tasks;
 using Game.Core.Enums;
 using Game.Core.Extensions;
 using Game.Core.MessagePipe;
@@ -35,13 +34,13 @@ namespace Game.Contents.UI
 
         public override Task Ready()
         {
-            AudioService.PlayRandomAsync(AudioCategory.SoundEffect, AudioPlayTag.UIOpen).Forget();
+            AudioService.PlayRandomOneAsync(AudioCategory.SoundEffect, AudioPlayTag.UIOpen).Forget();
             return base.Ready();
         }
 
         public override Task Terminate()
         {
-            AudioService.PlayRandomAsync(AudioCategory.SoundEffect, AudioPlayTag.UIClose).Forget();
+            AudioService.PlayRandomOneAsync(AudioCategory.SoundEffect, AudioPlayTag.UIClose).Forget();
             GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.TimeScale, true);
             GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.Cursor, false);
             return base.Terminate();
@@ -68,10 +67,10 @@ namespace Game.Contents.UI
         {
             _resumeButton.OnClickAsObservable()
                 .ThrottleFirst(TimeSpan.FromSeconds(OnClickInterval))
-                .Subscribe(_ =>
+                .SubscribeAwait(async (_, token) =>
                 {
                     SetInteractable(false);
-                    GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.Resume, true);
+                    await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameStage.Resume, true, token);
 
                     // Memo: 一旦、どのメソッドでも閉じられる挙動にするという確認
                     dialog.TrySetResult(false);

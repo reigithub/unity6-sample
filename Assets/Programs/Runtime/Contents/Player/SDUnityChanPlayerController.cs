@@ -89,7 +89,7 @@ namespace Game.Contents.Player
                 .DistinctUntilChangedBy(x => IsRunning())
                 .Subscribe(_ =>
                 {
-                    if (IsRunning()) AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerRun).Forget();
+                    if (IsRunning()) AudioService.PlayRandomOneAsync(AudioCategory.Voice, AudioPlayTag.PlayerRun).Forget();
                 })
                 .AddTo(this);
         }
@@ -109,7 +109,7 @@ namespace Game.Contents.Player
                 if (enter)
                 {
                     _isDown = true;
-                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerDown).Forget();
+                    AudioService.PlayRandomOneAsync(AudioCategory.Voice, AudioPlayTag.PlayerDown).Forget();
                 }
             }
             else if (stateInfo.IsName("Base Layer.DownToUp"))
@@ -117,7 +117,7 @@ namespace Game.Contents.Player
                 if (!enter)
                 {
                     _isDown = false;
-                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerGetUp).Forget();
+                    AudioService.PlayRandomOneAsync(AudioCategory.Voice, AudioPlayTag.PlayerGetUp).Forget();
                 }
             }
             else
@@ -252,7 +252,7 @@ namespace Game.Contents.Player
         {
             if (_jumpTriggered && _player.Jump.IsPressed())
             {
-                AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerJump).Forget();
+                AudioService.PlayRandomOneAsync(AudioCategory.Voice, AudioPlayTag.PlayerJump).Forget();
 
                 // _rigidbody.linearDamping = 0.2f;
                 _rigidbody.linearVelocity = new Vector3(_rigidbody.linearVelocity.x, _jump, _rigidbody.linearVelocity.z);
