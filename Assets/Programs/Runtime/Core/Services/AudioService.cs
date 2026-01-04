@@ -64,6 +64,7 @@ namespace Game.Core.Services
 
             return;
 
+            // TODO: マスターボリュームなどを設定できるオプション画面
             void PlayBgmCore()
             {
                 _bgmSource.Stop();
