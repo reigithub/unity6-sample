@@ -120,11 +120,11 @@ namespace Game.Contents.Player
                     AudioService.PlayRandomOneAsync(AudioCategory.Voice, AudioPlayTag.PlayerGetUp).Forget();
                 }
             }
-            else
-            {
-                if (enter) Debug.LogError($"---Enter ObservableStateMachineTrigger: {stateInfo.fullPathHash}");
-                if (!enter) Debug.LogError($"---Exit ObservableStateMachineTrigger: {stateInfo.fullPathHash}");
-            }
+            // else
+            // {
+            //     if (enter) Debug.LogError($"---Enter ObservableStateMachineTrigger: {stateInfo.fullPathHash}");
+            //     if (!enter) Debug.LogError($"---Exit ObservableStateMachineTrigger: {stateInfo.fullPathHash}");
+            // }
         }
 
         public void SetMainCamera(Transform mainCamera)
