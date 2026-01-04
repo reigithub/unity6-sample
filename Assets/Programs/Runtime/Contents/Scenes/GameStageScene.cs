@@ -33,9 +33,11 @@ namespace Game.Contents.Scenes
             return Task.CompletedTask;
         }
 
-        public override async Task<GameObject> LoadAsset()
+        public override async Task LoadAsset()
         {
-            var instance = await base.LoadAsset();
+            await base.LoadAsset();
+
+            // 追加でStageMasterに対応したUnityシーン(3Dフィールド)をロードする
             _stageSceneInstance = await AssetService.LoadSceneAsync(SceneModel.StageMaster.AssetName);
 
             // ステージアセットに設定されたSkyboxをメインカメラに反映
@@ -44,8 +46,6 @@ namespace Game.Contents.Scenes
             {
                 GlobalMessageBroker.GetPublisher<int, Material>().Publish(MessageKey.System.Skybox, skybox.material);
             }
-
-            return instance;
         }
 
         public override async Task Startup()
@@ -248,7 +248,6 @@ namespace Game.Contents.Scenes
             else
                 AudioService.PlayRandomOneAsync(AudioCategory.Voice, AudioPlayTag.StageFailed).Forget();
 
-            // Debug.LogError($"Stage Result: {result}");
             await GameResultUIDialog.RunAsync(SceneModel.CreateStageResult());
         }
     }

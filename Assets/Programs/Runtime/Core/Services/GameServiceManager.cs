@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -5,7 +6,10 @@ namespace Game.Core.Services
 {
     public partial class GameServiceManager
     {
-        public static readonly GameServiceManager Instance = new();
+        private static readonly Lazy<GameServiceManager> InstanceLazy = new(() => new GameServiceManager());
+        public static GameServiceManager Instance => InstanceLazy.Value;
+
+        // public static readonly GameServiceManager Instance = new();
 
         private readonly Dictionary<string, GameService> _gameServiceByName = new();
 

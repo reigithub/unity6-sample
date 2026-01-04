@@ -74,7 +74,7 @@ namespace Game.Contents.UI
             }
 
             _countdown -= Time.unscaledDeltaTime;
-            _countdownText.text = _countdown <= 0f
+            _countdownText.text = _countdown <= 1f
                 ? "Game Start!"
                 : _countdown.ToString("F0");
         }

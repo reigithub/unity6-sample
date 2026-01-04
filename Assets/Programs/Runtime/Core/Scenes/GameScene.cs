@@ -15,9 +15,9 @@ namespace Game.Core.Scenes
     public interface IGameScene
     {
         // アセット(主にこのシーン)をロード
-        public virtual Task<GameObject> LoadAsset()
+        public virtual Task LoadAsset()
         {
-            return Task.FromResult<GameObject>(null);
+            return Task.CompletedTask;
         }
 
         // 事前初期化処理
@@ -78,9 +78,9 @@ namespace Game.Core.Scenes
 
         protected abstract string AssetPathOrAddress { get; }
 
-        public virtual Task<GameObject> LoadAsset()
+        public virtual Task LoadAsset()
         {
-            return Task.FromResult<GameObject>(null);
+            return Task.CompletedTask;
         }
 
         public virtual Task PreInitialize()
@@ -136,7 +136,7 @@ namespace Game.Core.Scenes
         public TGameScene Scene { get; set; }
         public TGameSceneComponent SceneComponent { get; protected set; }
 
-        public override Task<GameObject> LoadAsset()
+        public override Task LoadAsset()
         {
             return LoadScene();
         }
@@ -157,9 +157,9 @@ namespace Game.Core.Scenes
             await UnloadScene();
         }
 
-        protected virtual Task<GameObject> LoadScene()
+        protected virtual Task LoadScene()
         {
-            return Task.FromResult<GameObject>(null);
+            return Task.CompletedTask;
         }
 
         protected virtual Task UnloadScene()
@@ -177,12 +177,11 @@ namespace Game.Core.Scenes
         private GameObject _asset;
         private GameObject _instance;
 
-        protected override async Task<GameObject> LoadScene()
+        protected override async Task LoadScene()
         {
             _asset = await AssetService.LoadAssetAsync<GameObject>(AssetPathOrAddress);
             _instance = GameObject.Instantiate(_asset);
             GameSceneHelper.MoveToGameRootScene(_instance);
-            return _instance;
         }
 
         protected override Task UnloadScene()
@@ -214,11 +213,10 @@ namespace Game.Core.Scenes
 
         private SceneInstance _instance;
 
-        protected override async Task<GameObject> LoadScene()
+        protected override async Task LoadScene()
         {
             _instance = await AssetService.LoadSceneAsync(AssetPathOrAddress, LoadSceneMode, activateOnLoad: true);
             // SceneManager.SetActiveScene(_instance.Scene);
-            return null;
         }
 
         protected override async Task UnloadScene()
@@ -241,10 +239,9 @@ namespace Game.Core.Scenes
 
         private SceneInstance _instance;
 
-        public override async Task<GameObject> LoadAsset()
+        public override Task LoadAsset()
         {
-            await LoadScene();
-            return null;
+            return LoadScene();
         }
 
         public override async Task Terminate()
@@ -277,7 +274,7 @@ namespace Game.Core.Scenes
         private GameObject _asset;
         private GameObject _instance;
 
-        public override Task<GameObject> LoadAsset()
+        public override Task LoadAsset()
         {
             return LoadScene();
         }
@@ -305,11 +302,10 @@ namespace Game.Core.Scenes
             return UnloadScene();
         }
 
-        protected override async Task<GameObject> LoadScene()
+        protected override async Task LoadScene()
         {
             _asset = await AssetService.LoadAssetAsync<GameObject>(AssetPathOrAddress);
             _instance = GameObject.Instantiate(_asset);
-            return _instance;
         }
 
         protected override Task UnloadScene()

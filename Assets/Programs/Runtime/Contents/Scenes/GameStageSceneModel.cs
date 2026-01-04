@@ -52,14 +52,14 @@ namespace Game.Contents.Scenes
         public GameStageState StageState { get; set; }
         public GameStageResult StageResult { get; set; }
 
-        public ReactiveProperty<int> CurrentTime { get; set; } = new();
-        public int TotalTime { get; set; }
+        public ReactiveProperty<int> CurrentTime { get; } = new();
+        public int TotalTime { get; private set; }
 
-        public ReactiveProperty<int> CurrentPoint { get; set; } = new();
-        public int MaxPoint { get; set; }
+        public ReactiveProperty<int> CurrentPoint { get; } = new();
+        public int MaxPoint { get; private set; }
 
-        public int PlayerCurrentHp { get; set; }
-        public int PlayerMaxHp { get; set; }
+        public int PlayerCurrentHp { get; private set; }
+        public int PlayerMaxHp { get; private set; }
 
         public GameStageSceneModel()
         {
