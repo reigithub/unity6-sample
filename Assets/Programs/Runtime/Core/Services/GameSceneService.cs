@@ -85,19 +85,7 @@ namespace Game.Core.Services
 
             await TransitionCore(gameScene);
 
-            // Memo: リザルト周りは処理をまとめたい…
-            try
-            {
-                var result = await tcs.Task;
-                await TerminateAsync<TScene>();
-                return result;
-            }
-            catch (OperationCanceledException)
-            {
-                tcs.TrySetCanceled();
-            }
-
-            return default;
+            return await ResultCore<TScene, TResult>(tcs);
         }
 
         // 引数とリザルトつきの画面遷移
@@ -113,21 +101,10 @@ namespace Game.Core.Services
 
             await TransitionCore(gameScene);
 
-            try
-            {
-                var result = await tcs.Task;
-                await TerminateAsync<TScene>();
-                return result;
-            }
-            catch (OperationCanceledException)
-            {
-                tcs.TrySetCanceled();
-            }
-
-            return default;
+            return await ResultCore<TScene, TResult>(tcs);
         }
 
-        public async Task<TResult> TransitionDialogAsync<TScene, TComponent, TResult>(Func<TScene, TComponent, Task> startup = null)
+        public async Task<TResult> TransitionDialogAsync<TScene, TComponent, TResult>(Func<TScene, TComponent, Task> initializer = null)
             where TScene : GameDialogScene<TScene, TComponent, TResult>, new()
             where TComponent : GameSceneComponent
         {
@@ -142,24 +119,11 @@ namespace Game.Core.Services
             var gameScene = new TScene();
             _gameScenes.Add((typeof(TScene), gameScene));
             gameScene.Scene = gameScene; // コンポーネント側からダイアログ操作などを可能にするために、具象化クラスをベースクラスへ入れたい…（本当はダイアログ操作部分だけを公開したいが）
-            gameScene.StartupFilter = startup;
+            gameScene.Initializer = initializer;
             var tcs = gameScene.ResultTcs = new UniTaskCompletionSource<TResult>();
             await TransitionCore(gameScene, isDialog: true);
 
-            try
-            {
-                var result = await tcs.Task;
-                await TerminateAsync<TScene>(); // リザルトがセットされ、プロセスが終わったら閉じる
-                return result;
-            }
-            catch (OperationCanceledException)
-            {
-                // Debug.LogError($"{e.Message}");
-                // await TerminateAsync<TScene>(); // キャンセルされたら閉じるようにしておく
-                tcs.TrySetCanceled();
-            }
-
-            return default;
+            return await ResultCore<TScene, TResult>(tcs);
         }
 
         /// <summary>
@@ -174,6 +138,25 @@ namespace Game.Core.Services
             await gameScene.Startup();
             if (!isDialog) await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameScene.TransitionFinish, true);
             await gameScene.Ready();
+        }
+
+        private async Task<TResult> ResultCore<TScene, TResult>(UniTaskCompletionSource<TResult> tcs)
+            where TScene : IGameScene, IGameSceneResult<TResult>, new()
+        {
+            try
+            {
+                var result = await tcs.Task;
+                await TerminateAsync<TScene>(); // リザルトがセットされ、プロセスが終わったら閉じる
+                return result;
+            }
+            catch (OperationCanceledException e)
+            {
+                // Debug.LogError($"{e.Message}");
+                // await TerminateAsync<TScene>(); // キャンセルされたら閉じるようにしておく
+                tcs.TrySetCanceled();
+            }
+
+            return default;
         }
 
         public bool IsProcessing<TScene>()

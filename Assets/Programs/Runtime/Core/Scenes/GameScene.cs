@@ -124,9 +124,9 @@ namespace Game.Core.Scenes
     // 任意パラメータを受け取りつつ処理を挟みたいとき
     // 主にダイアログ
     // プロセス毎に分けるか要検討
-    public interface IGameSceneStartupFilter<TScene, TSceneComponent>
+    public interface IGameSceneInitializer<TScene, TSceneComponent>
     {
-        public Func<TScene, TSceneComponent, Task> StartupFilter { get; set; }
+        public Func<TScene, TSceneComponent, Task> Initializer { get; set; }
     }
 
     public abstract class GameScene<TGameScene, TGameSceneComponent> : GameScene
@@ -263,11 +263,11 @@ namespace Game.Core.Scenes
 
     // 主にダイアログ用(オーバーレイ表示想定)
     // Memo: MonoBehaviourを使う以上、C#では多重継承できないので、個別作成
-    public abstract class GameDialogScene<TScene, TSceneComponent, TResult> : GameScene<TScene, TSceneComponent>, IGameSceneStartupFilter<TScene, TSceneComponent>, IGameSceneResult<TResult>
+    public abstract class GameDialogScene<TScene, TSceneComponent, TResult> : GameScene<TScene, TSceneComponent>, IGameSceneInitializer<TScene, TSceneComponent>, IGameSceneResult<TResult>
         where TScene : IGameScene
         where TSceneComponent : GameSceneComponent
     {
-        public Func<TScene, TSceneComponent, Task> StartupFilter { get; set; }
+        public Func<TScene, TSceneComponent, Task> Initializer { get; set; }
 
         public UniTaskCompletionSource<TResult> ResultTcs { get; set; }
 
@@ -287,7 +287,7 @@ namespace Game.Core.Scenes
 
         public override Task Startup()
         {
-            StartupFilter?.Invoke(Scene, SceneComponent);
+            Initializer?.Invoke(Scene, SceneComponent);
             return Task.CompletedTask;
         }
 

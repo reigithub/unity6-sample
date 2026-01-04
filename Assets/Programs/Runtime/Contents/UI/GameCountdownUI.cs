@@ -15,7 +15,7 @@ namespace Game.Contents.UI
         {
             var sceneService = GameServiceManager.Instance.GetService<GameSceneService>();
             return sceneService.TransitionDialogAsync<GameCountdownUIDialog, GameCountdownUI, bool>(
-                startup: (dialog, component) =>
+                initializer: (dialog, component) =>
                 {
                     component.Initialize(dialog, countdown);
                     return Task.CompletedTask;

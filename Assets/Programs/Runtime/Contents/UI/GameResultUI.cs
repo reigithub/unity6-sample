@@ -19,7 +19,7 @@ namespace Game.Contents.UI
         public static Task<bool> RunAsync(GameStageResultData data)
         {
             var sceneService = GameServiceManager.Instance.GetService<GameSceneService>();
-            return sceneService.TransitionDialogAsync<GameResultUIDialog, GameResultUI, bool>(startup: (dialog, component) =>
+            return sceneService.TransitionDialogAsync<GameResultUIDialog, GameResultUI, bool>(initializer: (dialog, component) =>
             {
                 component.Initialize(dialog, data);
                 return Task.CompletedTask;
