@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using Game.Core.Enums;
 using Game.Core.Extensions;
 using Game.Core.MasterData.MemoryTables;
 using Game.Core.MessagePipe;
@@ -52,7 +54,7 @@ namespace Game.Contents.Player
         private Transform _mainCamera;
         private Vector2 _moveValue = Vector2.zero;
         private Vector3 _moveVector = Vector3.zero;
-        private float _speed;
+        private readonly ReactiveProperty<float> _speed = new();
         private Quaternion _lookRotation = Quaternion.identity;
         private bool _jumpTriggered;
 
@@ -82,6 +84,15 @@ namespace Game.Contents.Player
                 .Merge()
                 .Subscribe(info => UpdateStateInfo(info.StateInfo, false))
                 .AddTo(this);
+
+            _speed
+                .ThrottleFirst(TimeSpan.FromSeconds(3f))
+                // .DistinctUntilChangedBy(x => IsRunning())
+                .Subscribe(_ =>
+                {
+                    if (IsRunning()) AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerRun).Forget();
+                })
+                .AddTo(this);
         }
 
         private void UpdateStateInfo(AnimatorStateInfo stateInfo, bool enter)
@@ -96,11 +107,19 @@ namespace Game.Contents.Player
             }
             else if (stateInfo.IsName("Base Layer.GoDown"))
             {
-                if (enter) _isDown = true;
+                if (enter)
+                {
+                    _isDown = true;
+                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerDown).Forget();
+                }
             }
             else if (stateInfo.IsName("Base Layer.DownToUp"))
             {
-                if (!enter) _isDown = false;
+                if (!enter)
+                {
+                    _isDown = false;
+                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerGetUp).Forget();
+                }
             }
             else
             {
@@ -161,8 +180,8 @@ namespace Game.Contents.Player
             _moveVector = new Vector3(_moveValue.x, 0.0f, _moveValue.y).normalized;
 
             // 移動速度更新
-            _speed = _moveVector.magnitude * (_player.LeftShift.IsPressed() ? _runSpeed : _jogSpeed);
-            _animator.SetFloat(Animator.StringToHash("Speed"), _speed);
+            _speed.Value = _moveVector.magnitude * (_player.LeftShift.IsPressed() ? _runSpeed : _jogSpeed);
+            _animator.SetFloat(Animator.StringToHash("Speed"), _speed.Value);
 
             // 回転入力受付
             if (_moveValue.magnitude > 0.1f)
@@ -195,7 +214,7 @@ namespace Game.Contents.Player
             }
 
             // 移動
-            _rigidbody.MovePosition(_rigidbody.position + _moveVector * _speed * Time.fixedDeltaTime);
+            _rigidbody.MovePosition(_rigidbody.position + _moveVector * _speed.Value * Time.fixedDeltaTime);
             // _rigidbody.AddForce(_moveVector * speed);
             // transform.Translate(moveVector * speed * Time.deltaTime, Space.World);
 
@@ -234,7 +253,7 @@ namespace Game.Contents.Player
         {
             if (_jumpTriggered && _player.Jump.IsPressed())
             {
-                AudioService.PlayVoiceAsync("univ0001").Forget();
+                AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerJump).Forget();
 
                 // _rigidbody.linearDamping = 0.2f;
                 _rigidbody.linearVelocity = new Vector3(_rigidbody.linearVelocity.x, _jump, _rigidbody.linearVelocity.z);
@@ -256,22 +275,22 @@ namespace Game.Contents.Player
 
         public bool IsMoving()
         {
-            return _speed > 0f;
+            return _speed.Value > 0f;
         }
 
         public bool IsWalking()
         {
-            return _speed >= _walkSpeed && _speed < _jogSpeed;
+            return _speed.Value >= _walkSpeed && _speed.Value < _jogSpeed;
         }
 
         public bool IsJogging()
         {
-            return _speed >= _jogSpeed && _speed < _runSpeed;
+            return _speed.Value >= _jogSpeed && _speed.Value < _runSpeed;
         }
 
         public bool IsRunning()
         {
-            return _speed >= _runSpeed;
+            return _speed.Value >= _runSpeed;
         }
 
         private bool IsGrounded()

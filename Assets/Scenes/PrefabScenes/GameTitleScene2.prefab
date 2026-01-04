@@ -500,6 +500,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Contents.Scenes.GameTitleSceneComponent
   _startButton: {fileID: 1450084503552447791}
   _quitButton: {fileID: 7070712746225380679}
+  _animator: {fileID: 2923606163791741231}
 --- !u!1 &4958871894725185800
 GameObject:
   m_ObjectHideFlags: 0
@@ -1352,6 +1353,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400264, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
   m_PrefabInstance: {fileID: 2923606163782366287}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &2923606163791741231 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 9500000, guid: 13a16f60da4245c45a865b2136ba272c, type: 3}
+  m_PrefabInstance: {fileID: 2923606163782366287}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7912463684145335142
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1360,6 +1366,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5855587280245561097}
     m_Modifications:
+    - target: {fileID: 100000, guid: 713ccdba7a92725428570ec12c8ac217, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 713ccdba7a92725428570ec12c8ac217, type: 3}
       propertyPath: m_RootOrder
       value: 5

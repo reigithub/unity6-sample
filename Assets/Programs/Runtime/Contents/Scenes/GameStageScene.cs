@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Game.Contents.Enemy;
 using Game.Contents.Player;
 using Game.Contents.UI;
+using Game.Core.Enums;
 using Game.Core.Extensions;
 using Game.Core.MessagePipe;
 using Game.Core.Scenes;
@@ -78,13 +79,17 @@ namespace Game.Contents.Scenes
         {
             // ゲーム開始準備OKの合図
             SceneModel.StageState = GameStageState.Ready;
+            AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageReady).Forget();
             //カウントダウンしてスタート
             await GameCountdownUIDialog.RunAsync();
             await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.System.TimeScale, true);
             await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.System.Cursor, false);
+            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.InputSystem.Escape, true);
+            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.InputSystem.ScrollWheel, true);
             SceneModel.StageState = GameStageState.Start;
             SceneComponent.DoFadeIn();
             _playerStart.PlayerHUD.DoFadeIn();
+            await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageStart);
             await base.Ready();
         }
 
@@ -110,33 +115,44 @@ namespace Game.Contents.Scenes
                 .AddTo(SceneComponent);
 
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Pause, handler: async (_, _) =>
+                .Subscribe(MessageKey.GameStage.Pause, handler: async (_, token) =>
                 {
                     if (!SceneModel.CanPause()) return;
+                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StagePause, token).Forget();
                     // 一時停止メニュー
                     await GamePauseUIDialog.RunAsync();
                 })
                 .AddTo(SceneComponent);
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Retry, handler: async (_, _) =>
+                .Subscribe(MessageKey.GameStage.Resume, handler: async (_, token) =>
+                {
+                    if (!SceneModel.CanPause()) return;
+                    await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageResume, token);
+                })
+                .AddTo(SceneComponent);
+            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
+                .Subscribe(MessageKey.GameStage.Retry, handler: async (_, token) =>
                 {
                     SceneModel.StageState = GameStageState.Retry;
+                    await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageRetry, token);
                     // 現在のステージへ再遷移
                     await SceneService.TransitionAsync<GameStageScene, GameStageSceneModel, int>(_stageId);
                 })
                 .AddTo(SceneComponent);
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.ReturnTitle, handler: async (_, _) =>
+                .Subscribe(MessageKey.GameStage.ReturnTitle, handler: async (_, token) =>
                 {
+                    await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageReturnTitle, token);
                     // 現在のシーンを終了させてタイトルに戻る
                     await SceneService.TransitionAsync<GameTitleScene>();
                 })
                 .AddTo(SceneComponent);
 
             GlobalMessageBroker.GetAsyncSubscriber<int, int?>()
-                .Subscribe(MessageKey.GameStage.Finish, handler: async (nextStageId, _) =>
+                .Subscribe(MessageKey.GameStage.Finish, handler: async (nextStageId, token) =>
                 {
                     SceneModel.StageState = GameStageState.Finish;
+                    await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageFinish, token);
                     if (nextStageId.HasValue)
                     {
                         // 次のステージへ
@@ -165,6 +181,8 @@ namespace Game.Contents.Scenes
 
                     other.gameObject.SafeDestroy();
 
+                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerGetPoint).Forget();
+
                     SceneModel.AddPoint(point);
 
                     TryShowResultDialogAsync().Forget();
@@ -184,6 +202,8 @@ namespace Game.Contents.Scenes
                     var hpDamage = enemyController.EnemyMaster.HpAttack;
 
                     other.gameObject.SafeDestroy();
+
+                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerDamaged).Forget();
 
                     SceneModel.PlayerHpDamaged(hpDamage);
 
@@ -212,6 +232,12 @@ namespace Game.Contents.Scenes
             SceneModel.StageState = GameStageState.Result;
             SceneComponent.DoFadeOut();
             _playerStart.PlayerHUD.DoFadeOut();
+
+            if (SceneModel.StageResult is GameStageResult.Clear)
+                await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageClear);
+            else
+                await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageFailed);
+
             // Debug.LogError($"Stage Result: {result}");
             await GameResultUIDialog.RunAsync(SceneModel.CreateStageResult());
         }

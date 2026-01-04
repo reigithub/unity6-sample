@@ -10,6 +10,7 @@
             public const int GameStage = 300;
             public const int Player = 500;
             public const int UI = 600;
+            public const int InputSystem = 700;
         }
 
         public struct System
@@ -23,8 +24,9 @@
 
         public struct Game
         {
-            public const int Start = Offset.Game + 0;
-            public const int Quit = Offset.Game + 1;
+            public const int Ready = Offset.Game + 0;
+            public const int Start = Offset.Game + 1;
+            public const int Quit = Offset.Game + 2;
         }
 
         public struct GameScene
@@ -56,6 +58,12 @@
         {
             public const int Escape = Offset.UI + 0;
             public const int ScrollWheel = Offset.UI + 1;
+        }
+
+        public struct InputSystem
+        {
+            public const int Escape = Offset.InputSystem + 0;
+            public const int ScrollWheel = Offset.InputSystem + 1;
         }
     }
 }

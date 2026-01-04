@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Game.Contents.Player;
 using Game.Contents.UI;
+using Game.Core.Enums;
 using Game.Core.Extensions;
 using Game.Core.Services;
 using Game.Core.MessagePipe;
@@ -53,14 +54,15 @@ namespace Game.Core
 
         [SerializeField] private Image _fadeImage;
 
+        private GameServiceReference<AudioService> _audioService;
+        private AudioService AudioService => _audioService.Reference;
+
         private GameServiceReference<GameSceneService> _sceneService;
         private GameSceneService SceneService => _sceneService.Reference;
 
         private GameServiceReference<MessageBrokerService> _messageBrokerService;
         private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
 
-        // Memo: どこに持つかは要検討としてマーク
-        private bool _gameStart;
         private Material _defaultSkyboxMaterial;
 
         private void Initialize()
@@ -117,11 +119,18 @@ namespace Game.Core
                 .AddTo(this);
 
             // Game
-            GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.Game.Start, handler: _ => { _gameStart = true; })
+            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
+                .Subscribe(MessageKey.Game.Ready, handler: async (_, token) => { await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.GameReady, token); })
                 .AddTo(this);
-            GlobalMessageBroker.GetSubscriber<int, bool>()
-                .Subscribe(MessageKey.Game.Quit, handler: _ => { GameManager.Instance.GameQuit(); })
+            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
+                .Subscribe(MessageKey.Game.Start, handler: async (_, token) => { await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.GameStart, token); })
+                .AddTo(this);
+            GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
+                .Subscribe(MessageKey.Game.Quit, handler: async (_, token) =>
+                {
+                    await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.GameQuit, token);
+                    GameManager.Instance.GameQuit();
+                })
                 .AddTo(this);
 
             // GameScene
@@ -158,11 +167,7 @@ namespace Game.Core
 
             // UI
             GlobalMessageBroker.GetSubscriber<int, Vector2>()
-                .Subscribe(MessageKey.UI.ScrollWheel, handler: scrollWheel =>
-                {
-                    if (!_gameStart) return;
-                    _playerFollowCameraController.SetCameraRadius(scrollWheel);
-                })
+                .Subscribe(MessageKey.UI.ScrollWheel, handler: scrollWheel => { _playerFollowCameraController.SetCameraRadius(scrollWheel); })
                 .AddTo(this);
         }
 

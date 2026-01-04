@@ -1,5 +1,7 @@
 using Game.Core.MessagePipe;
 using Game.Core.Services;
+using MessagePipe;
+using R3;
 using UnityChan;
 using UnityEngine;
 
@@ -18,6 +20,24 @@ namespace Game.Contents.UI
 
         public void Initialize()
         {
+            GlobalMessageBroker.GetSubscriber<int, bool>()
+                .Subscribe(MessageKey.InputSystem.Escape, handler: status =>
+                {
+                    if (status)
+                        _ui.Escape.Enable();
+                    else
+                        _ui.Escape.Disable();
+                })
+                .AddTo(this);
+            GlobalMessageBroker.GetSubscriber<int, bool>()
+                .Subscribe(MessageKey.InputSystem.ScrollWheel, handler: status =>
+                {
+                    if (status)
+                        _ui.ScrollWheel.Enable();
+                    else
+                        _ui.ScrollWheel.Disable();
+                })
+                .AddTo(this);
         }
 
         private void Awake()
