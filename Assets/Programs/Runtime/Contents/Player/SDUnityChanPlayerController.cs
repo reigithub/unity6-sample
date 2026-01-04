@@ -86,7 +86,6 @@ namespace Game.Contents.Player
                 .AddTo(this);
 
             _speed
-                .ThrottleFirst(TimeSpan.FromSeconds(1f))
                 .DistinctUntilChangedBy(x => IsRunning())
                 .Subscribe(_ =>
                 {

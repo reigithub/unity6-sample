@@ -26,12 +26,12 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 568470e29bef88c4aaa027db357be957
-    m_Address: Notified 2
+    m_Address: Notified2
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6e7f23ef945c235438595e89d6332d46
-    m_Address: Shimmery Reward 5
+    m_Address: ShimmeryReward5
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

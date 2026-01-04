@@ -39,5 +39,7 @@ namespace Game.Core.Enums
         PlayerGetPoint = 7040,
 
         UIButton = 9000,
+        UIOpen = 9001,
+        UIClose = 9002,
     }
 }

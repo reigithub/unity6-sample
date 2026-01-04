@@ -410,3 +410,9 @@ Id	Name	AssetName	Desc	AudioCategory
 1018	8bit_062022_Track8	8bit_062022_Track8		1
 1019	8bit_062022_Track9	8bit_062022_Track9		1
 1020	8bit_062022_Track10	8bit_062022_Track10		1
+2001	PositiveClick1_8bitSFX	PositiveClick1_8bitSFX	UIボタン	3
+2002	PositiveClick2_8bitSFX	PositiveClick2_8bitSFX	開く	3
+2003	PositiveClick3_8bitSFX	PositiveClick3_8bitSFX	閉じる	3
+2004	SpecialClick1_8bitSFX	SpecialClick1_8bitSFX	ゲーム開始／終了	3
+2005	Notified2	Notified2	アイテム獲得	3
+2006	ShimmeryReward5	ShimmeryReward5	アイテム獲得	3

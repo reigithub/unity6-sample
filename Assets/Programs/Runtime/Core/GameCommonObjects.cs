@@ -176,6 +176,10 @@ namespace Game.Core
                 .AddTo(this);
 
             // UI
+            GlobalMessageBroker.GetSubscriber<int, bool>()
+                .Subscribe(MessageKey.UI.Escape, handler: escape => { GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.Pause, escape); })
+                .AddTo(this);
+
             GlobalMessageBroker.GetSubscriber<int, Vector2>()
                 .Subscribe(MessageKey.UI.ScrollWheel, handler: scrollWheel => { _playerFollowCameraController.SetCameraRadius(scrollWheel); })
                 .AddTo(this);

@@ -77,8 +77,7 @@ namespace Game.Contents.UI
 
             if (_ui.Escape.WasPressedThisFrame())
             {
-                _pause = !_pause;
-                GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.Pause, _pause);
+                GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.UI.Escape, true);
             }
 
             if (_ui.ScrollWheel.WasPressedThisFrame())

@@ -22,6 +22,13 @@ namespace Game.Core.Services
         private AudioSource _voiceSource;
         private AudioSource _sfxSource;
 
+        private readonly float _bgmVolume = 0.3f;
+        private readonly float _bgmFadeDuration = 0.25f;
+        private readonly float _voiceVolume = 1f;
+        private readonly float _voiceFadeDuration = 0.1f;
+        private readonly float _sfxVolume = 0.7f;
+        private readonly float _sfxFadeDuration = 0.1f;
+
         protected internal override void Startup()
         {
             _audioService = new GameObject(nameof(AudioService));
@@ -73,7 +80,7 @@ namespace Game.Core.Services
                 _bgmSource.mute = false;
                 _bgmSource.loop = true;
                 _bgmSource.Play();
-                _bgmSource.DOFade(0.5f, 0.25f); // 一旦うるさいので50%
+                _bgmSource.DOFade(_bgmVolume, _bgmFadeDuration); // 一旦うるさいので50%
             }
         }
 
@@ -81,9 +88,35 @@ namespace Game.Core.Services
         {
             if (_bgmSource.isPlaying)
             {
-                _bgmSource.DOFade(0f, 0.25f).onComplete += () => { _bgmSource.Stop(); };
+                _bgmSource.DOFade(0f, _bgmFadeDuration).onComplete += () => { _bgmSource.Stop(); };
             }
         }
+
+        // public void PauseBgm()
+        // {
+        //     _bgmSource.DOFade(0.1f, 0.1f).onComplete += () => { _bgmSource.Pause(); };
+        // }
+        //
+        // public void ResumeBgm()
+        // {
+        //     _bgmSource.DOFade(_bgmVolume, 0.1f).onComplete += () => { _bgmSource.UnPause(); };
+        // }
+
+        // public IDisposable BgmVolumeFade()
+        // {
+        //     if (_bgmSource.isPlaying)
+        //     {
+        //         _bgmSource.DOFade(_bgmVolume / 3f, 0.1f);
+        //     }
+        //
+        //     return Disposable.Create(() =>
+        //     {
+        //         if (_bgmSource.isPlaying)
+        //             _bgmSource.DOFade(_bgmVolume, 0.1f);
+        //         else
+        //             _bgmSource.DOFade(_bgmVolume, 0.1f).OnComplete(() => _bgmSource.UnPause());
+        //     });
+        // }
 
         public async Task PlayVoiceAsync(string assetName, CancellationToken token = default)
         {
@@ -92,7 +125,7 @@ namespace Game.Core.Services
             // Memo: 今のところ、前回のボイスはフェードアウトして再生するとしているが
             // →再生リクエスト間隔が短いとうるさくなるため、一括で再生間隔を設定する方法を検討
             if (_voiceSource.isPlaying)
-                _voiceSource.DOFade(0f, 0.1f).onComplete += () => { PlayVoiceCore(); };
+                _voiceSource.DOFade(0f, _voiceFadeDuration).onComplete += () => { PlayVoiceCore(); };
             else
                 PlayVoiceCore();
 
@@ -103,7 +136,7 @@ namespace Game.Core.Services
             void PlayVoiceCore()
             {
                 _voiceSource.Stop();
-                _voiceSource.volume = 1f;
+                _voiceSource.volume = _voiceVolume;
                 _voiceSource.mute = false;
                 _voiceSource.loop = false;
                 _voiceSource.PlayOneShot(audioClip);
@@ -115,7 +148,7 @@ namespace Game.Core.Services
             var audioClip = await Addressables.LoadAssetAsync<AudioClip>(assetName);
 
             if (_sfxSource.isPlaying)
-                _sfxSource.DOFade(0f, 0.1f).onComplete += () => { PlaySoundEffectCore(); };
+                _sfxSource.DOFade(0f, _sfxFadeDuration).onComplete += () => { PlaySoundEffectCore(); };
             else
                 PlaySoundEffectCore();
 
@@ -126,7 +159,7 @@ namespace Game.Core.Services
             void PlaySoundEffectCore()
             {
                 _sfxSource.Stop();
-                _sfxSource.volume = 1f;
+                _sfxSource.volume = _sfxVolume;
                 _sfxSource.mute = false;
                 _sfxSource.loop = false;
                 _sfxSource.PlayOneShot(audioClip);

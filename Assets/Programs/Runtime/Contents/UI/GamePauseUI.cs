@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using Game.Core.Enums;
+using Game.Core.Extensions;
 using Game.Core.MessagePipe;
 using Game.Core.Scenes;
 using Game.Core.Services;
@@ -31,8 +33,15 @@ namespace Game.Contents.UI
             return base.Startup();
         }
 
+        public override Task Ready()
+        {
+            AudioService.PlayRandomAsync(AudioCategory.SoundEffect, AudioPlayTag.UIOpen).Forget();
+            return base.Ready();
+        }
+
         public override Task Terminate()
         {
+            AudioService.PlayRandomAsync(AudioCategory.SoundEffect, AudioPlayTag.UIClose).Forget();
             GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.TimeScale, true);
             GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.Cursor, false);
             return base.Terminate();

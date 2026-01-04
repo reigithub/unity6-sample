@@ -117,15 +117,11 @@ namespace Game.Contents.Scenes
                 .AddTo(SceneComponent);
 
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Pause, handler: async (pause, token) =>
+                .Subscribe(MessageKey.GameStage.Pause, handler: async (_, token) =>
                 {
                     if (!SceneModel.CanPause()) return;
 
-                    // Memo: これはちょっと微妙なので、改善を検討
-                    if (pause)
-                        AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StagePause, token).Forget();
-                    else
-                        AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageResume, token).Forget();
+                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StagePause, token).Forget();
 
                     // 一時停止メニュー
                     await GamePauseUIDialog.RunAsync();
@@ -135,7 +131,10 @@ namespace Game.Contents.Scenes
                 .Subscribe(MessageKey.GameStage.Resume, handler: async (_, token) =>
                 {
                     if (!SceneModel.CanPause()) return;
-                    await AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageResume, token);
+
+                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageResume, token).Forget();
+
+                    await SceneService.TerminateAsync<GamePauseUIDialog>();
                 })
                 .AddTo(SceneComponent);
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
@@ -190,6 +189,7 @@ namespace Game.Contents.Scenes
                     other.gameObject.SafeDestroy();
 
                     AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerGetPoint).Forget();
+                    AudioService.PlayRandomAsync(AudioCategory.SoundEffect, AudioPlayTag.PlayerGetPoint).Forget();
 
                     SceneModel.AddPoint(point);
 
