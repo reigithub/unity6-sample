@@ -18,6 +18,8 @@ namespace Game.Contents.UI
         private SDUnityChanInputSystem _inputSystem;
         private SDUnityChanInputSystem.UIActions _ui;
 
+        private bool _pause;
+
         public void Initialize()
         {
             GlobalMessageBroker.GetSubscriber<int, bool>()
@@ -75,7 +77,8 @@ namespace Game.Contents.UI
 
             if (_ui.Escape.WasPressedThisFrame())
             {
-                GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.Pause, true);
+                _pause = !_pause;
+                GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.GameStage.Pause, _pause);
             }
 
             if (_ui.ScrollWheel.WasPressedThisFrame())

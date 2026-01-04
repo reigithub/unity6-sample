@@ -86,8 +86,8 @@ namespace Game.Contents.Player
                 .AddTo(this);
 
             _speed
-                .ThrottleFirst(TimeSpan.FromSeconds(3f))
-                // .DistinctUntilChangedBy(x => IsRunning())
+                .ThrottleFirst(TimeSpan.FromSeconds(1f))
+                .DistinctUntilChangedBy(x => IsRunning())
                 .Subscribe(_ =>
                 {
                     if (IsRunning()) AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.PlayerRun).Forget();

@@ -115,10 +115,16 @@ namespace Game.Contents.Scenes
                 .AddTo(SceneComponent);
 
             GlobalMessageBroker.GetAsyncSubscriber<int, bool>()
-                .Subscribe(MessageKey.GameStage.Pause, handler: async (_, token) =>
+                .Subscribe(MessageKey.GameStage.Pause, handler: async (pause, token) =>
                 {
                     if (!SceneModel.CanPause()) return;
-                    AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StagePause, token).Forget();
+
+                    // Memo: これはちょっと微妙なので、改善を検討
+                    if (pause)
+                        AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StagePause, token).Forget();
+                    else
+                        AudioService.PlayRandomAsync(AudioCategory.Voice, AudioPlayTag.StageResume, token).Forget();
+
                     // 一時停止メニュー
                     await GamePauseUIDialog.RunAsync();
                 })
