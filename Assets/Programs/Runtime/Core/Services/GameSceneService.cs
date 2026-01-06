@@ -26,10 +26,6 @@ namespace Game.Core.Services
 
         protected internal override bool AllowResidentOnMemory => true;
 
-        // 1.履歴を持って、一つ前のシーンへ戻れるように（→完了）
-        // 2.現在シーンをスリープさせて、次のシーンを表示する処理（→完了）
-        // 3.ダイアログ用のオーバーレイ表示（→完了）
-        // 4.マルチ解像度対応（いずれどこかで…）
         private readonly LinkedList<(Type type, IGameScene gameScene)> _gameScenes = new();
 
         private const GameSceneOperations DefaultOperations = GameSceneConstants.DefaultOperations;
@@ -78,7 +74,6 @@ namespace Game.Core.Services
 
             var type = typeof(TScene);
             var gameScene = new TScene();
-            // await gameScene.ArgHandle(arg);
             CreateArgHandler(gameScene, arg);
             var tcs = CreateResultTcs<TResult>(gameScene);
             _gameScenes.AddLast((type, gameScene));
@@ -121,7 +116,7 @@ namespace Game.Core.Services
             }
         }
 
-        public async Task<TResult> TransitionDialogAsync<TScene, TComponent, TResult>(Func<TScene, TComponent, Task> initializer = null)
+        public async Task<TResult> TransitionDialogAsync<TScene, TComponent, TResult>(Func<TComponent, IGameSceneResult<TResult>, Task> initializer = null)
             where TScene : GameDialogScene<TScene, TComponent, TResult>, new()
             where TComponent : GameSceneComponent
         {
@@ -136,8 +131,7 @@ namespace Game.Core.Services
 
             // WARN: MonoBehaviourをnewしない方向で実装する必要がある…
             var gameScene = new TScene();
-            gameScene.Scene = gameScene; // WARN: コンポーネント側からダイアログ操作などを可能にするために、具象化クラスをベースクラスへ入れる（後で改善する）
-            gameScene.StartupHandler = initializer;
+            gameScene.DialogInitializer = initializer;
             var tcs = CreateResultTcs<TResult>(gameScene);
             _gameScenes.AddLast((type, gameScene));
             await TransitionCore(gameScene, isDialog: true);
@@ -163,8 +157,6 @@ namespace Game.Core.Services
                 bool clearHistory = operations.HasFlag(GameSceneOperations.CurrentSceneClearHistory);
                 await TerminateLastAsync(clearHistory);
             }
-
-            // 連続で同じシーンに遷移するリクエストは禁止する
         }
 
         private void CreateArgHandler<TArg>(IGameScene gameScene, TArg arg)
@@ -201,7 +193,6 @@ namespace Game.Core.Services
             if (gameScene.ArgHandler != null)
                 await gameScene.ArgHandler.Invoke(gameScene);
 
-            // Memo: ダイアログかではなく、遷移タイプがOverlayかで判断したい
             if (!isDialog) await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameScene.TransitionEnter, true);
             await gameScene.PreInitialize();
             await gameScene.LoadAsset();
@@ -302,7 +293,8 @@ namespace Game.Core.Services
         {
             foreach (var (type, gameScene) in _gameScenes.Reverse())
             {
-                if (gameScene is IGameDialogScene)
+                // リザルト持ちのシーンもダイアログとする
+                if (gameScene is IGameSceneResult)
                 {
                     await TerminateAsync(type, clearHistory: true);
                 }

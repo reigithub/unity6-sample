@@ -19,11 +19,12 @@ namespace Game.Contents.UI
         public static Task<bool> RunAsync(GameStageResultData data)
         {
             var sceneService = GameServiceManager.Instance.GetService<GameSceneService>();
-            return sceneService.TransitionDialogAsync<GameResultUIDialog, GameResultUI, bool>(initializer: (dialog, component) =>
-            {
-                component.Initialize(dialog, data);
-                return Task.CompletedTask;
-            });
+            return sceneService.TransitionDialogAsync<GameResultUIDialog, GameResultUI, bool>(
+                initializer: (component, result) =>
+                {
+                    component.Initialize(result, data);
+                    return Task.CompletedTask;
+                });
         }
 
         public override Task Startup()
@@ -72,7 +73,7 @@ namespace Game.Contents.UI
         [SerializeField]
         private Button _totalResultButton;
 
-        public void Initialize(GameResultUIDialog dialog, GameStageResultData data)
+        public void Initialize(IGameSceneResult<bool> result, GameStageResultData data)
         {
             if (data.StageResult == GameStageResult.Clear)
             {
@@ -104,7 +105,7 @@ namespace Game.Contents.UI
                     {
                         SetInteractable(false);
                         await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameStage.Finish, true, token);
-                        dialog.TrySetResult(true);
+                        result.TrySetResult(true);
                     })
                     .AddTo(this);
             }
@@ -118,7 +119,7 @@ namespace Game.Contents.UI
                     {
                         SetInteractable(false);
                         await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameStage.ReturnTitle, true, token);
-                        dialog.TrySetResult(false);
+                        result.TrySetResult(false);
                     })
                     .AddTo(this);
             }
@@ -132,7 +133,7 @@ namespace Game.Contents.UI
                     {
                         SetInteractable(false);
                         await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameStage.Finish, true, token);
-                        dialog.TrySetResult(true);
+                        result.TrySetResult(true);
                     })
                     .AddTo(this);
             }

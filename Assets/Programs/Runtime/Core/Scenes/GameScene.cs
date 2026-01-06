@@ -132,23 +132,23 @@ namespace Game.Core.Scenes
         public Func<IGameScene, Task> ArgHandler { get; set; }
     }
 
-    public interface IGameSceneResult<TResult>
+    public interface IGameSceneResult
     {
-        public UniTaskCompletionSource<TResult> ResultTcs { get; set; }
     }
 
-    // 任意パラメータを受け取りつつ処理を挟みたいとき
-    // 主にダイアログ
-    public interface IGameSceneStartupHandler<TScene, TSceneComponent>
+    public interface IGameSceneResult<TResult> : IGameSceneResult
     {
-        public Func<TScene, TSceneComponent, Task> StartupHandler { get; set; }
+        public UniTaskCompletionSource<TResult> ResultTcs { get; set; }
+
+        public bool TrySetResult(TResult result) => ResultTcs?.TrySetResult(result) ?? false;
+
+        public bool TrySetCanceled() => ResultTcs?.TrySetCanceled() ?? false;
     }
 
     public abstract class GameScene<TGameScene, TGameSceneComponent> : GameScene
         where TGameScene : IGameScene
         where TGameSceneComponent : GameSceneComponent
     {
-        public TGameScene Scene { get; set; }
         public TGameSceneComponent SceneComponent { get; protected set; }
 
         public override Task PreInitialize()
@@ -293,18 +293,20 @@ namespace Game.Core.Scenes
         }
     }
 
-    public interface IGameDialogScene
+    // 任意パラメータを受け取りつつ処理を挟みたいとき
+    public interface IGameDialogSceneInitializer<TComponent, TResult>
     {
+        public Func<TComponent, IGameSceneResult<TResult>, Task> DialogInitializer { get; set; }
     }
 
     // 主にダイアログ用(オーバーレイ表示想定)
     // Memo: MonoBehaviourを使う以上、C#では多重継承できないので、個別作成
-    public abstract class GameDialogScene<TScene, TSceneComponent, TResult> : GameScene<TScene, TSceneComponent>,
-        IGameDialogScene, IGameSceneStartupHandler<TScene, TSceneComponent>, IGameSceneResult<TResult>
+    public abstract class GameDialogScene<TScene, TComponent, TResult> : GameScene<TScene, TComponent>,
+        IGameDialogSceneInitializer<TComponent, TResult>, IGameSceneResult<TResult>
         where TScene : IGameScene
-        where TSceneComponent : GameSceneComponent
+        where TComponent : GameSceneComponent
     {
-        public Func<TScene, TSceneComponent, Task> StartupHandler { get; set; }
+        public Func<TComponent, IGameSceneResult<TResult>, Task> DialogInitializer { get; set; }
 
         public UniTaskCompletionSource<TResult> ResultTcs { get; set; }
 
@@ -324,7 +326,7 @@ namespace Game.Core.Scenes
 
         public override Task Startup()
         {
-            StartupHandler?.Invoke(Scene, SceneComponent);
+            DialogInitializer?.Invoke(SceneComponent, this);
             return Task.CompletedTask;
         }
 
@@ -373,9 +375,9 @@ namespace Game.Core.Scenes
             return ResultTcs?.TrySetCanceled() ?? false;
         }
 
-        protected override TSceneComponent GetSceneComponent()
+        protected override TComponent GetSceneComponent()
         {
-            return SceneComponent ??= GameSceneHelper.GetSceneComponent<TSceneComponent>(_instance);
+            return SceneComponent ??= GameSceneHelper.GetSceneComponent<TComponent>(_instance);
         }
     }
 }
