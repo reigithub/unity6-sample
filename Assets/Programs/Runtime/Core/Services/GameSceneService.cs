@@ -26,7 +26,7 @@ namespace Game.Core.Services
 
         protected internal override bool AllowResidentOnMemory => true;
 
-        private readonly LinkedList<(Type type, IGameScene gameScene)> _gameScenes = new();
+        private readonly LinkedList<IGameScene> _gameScenes = new();
 
         private const GameSceneOperations DefaultOperations = GameSceneConstants.DefaultOperations;
 
@@ -36,7 +36,7 @@ namespace Game.Core.Services
             await OperationAsync(operations);
 
             var gameScene = new TScene();
-            _gameScenes.AddLast((typeof(TScene), gameScene));
+            _gameScenes.AddLast(gameScene);
             await TransitionCore(gameScene);
         }
 
@@ -48,7 +48,7 @@ namespace Game.Core.Services
 
             var gameScene = new TScene();
             CreateArgHandler(gameScene, arg);
-            _gameScenes.AddLast((typeof(TScene), gameScene));
+            _gameScenes.AddLast(gameScene);
             await TransitionCore(gameScene);
         }
 
@@ -58,12 +58,11 @@ namespace Game.Core.Services
         {
             await OperationAsync(operations);
 
-            var type = typeof(TScene);
             var gameScene = new TScene();
             var tcs = CreateResultTcs<TResult>(gameScene);
-            _gameScenes.AddLast((type, gameScene));
+            _gameScenes.AddLast(gameScene);
             await TransitionCore(gameScene);
-            return await ResultCore(type, tcs);
+            return await ResultCore(gameScene, tcs);
         }
 
         // 引数とリザルトつきの画面遷移
@@ -72,13 +71,12 @@ namespace Game.Core.Services
         {
             await OperationAsync(operations);
 
-            var type = typeof(TScene);
             var gameScene = new TScene();
             CreateArgHandler(gameScene, arg);
             var tcs = CreateResultTcs<TResult>(gameScene);
-            _gameScenes.AddLast((type, gameScene));
+            _gameScenes.AddLast(gameScene);
             await TransitionCore(gameScene);
-            return await ResultCore(type, tcs);
+            return await ResultCore(gameScene, tcs);
         }
 
         // 現在のシーンから見て、前のシーンへ戻る
@@ -87,23 +85,22 @@ namespace Game.Core.Services
             var prevNode = _gameScenes.Last.Previous;
             if (prevNode != null)
             {
-                var target = prevNode.Value;
-                var state = target.gameScene.State;
-                if (state is GameSceneState.Terminate)
+                var gameScene = prevNode.Value;
+                if (gameScene.State is GameSceneState.Terminate)
                 {
                     // 現在のシーンを閉じて履歴を消す
                     await TerminateLastAsync(clearHistory: true);
                     // 履歴から遷移する
-                    await TransitionCore(target.gameScene);
+                    await TransitionCore(gameScene);
                 }
-                else if (state is GameSceneState.Sleep)
+                else if (gameScene.State is GameSceneState.Sleep)
                 {
                     // 現在のシーンを閉じて履歴を消す
                     await TerminateLastAsync(clearHistory: true);
                     // スリープ復帰
                     await RestartAsync();
                 }
-                else if (state is GameSceneState.Processing)
+                else if (gameScene.State is GameSceneState.Processing)
                 {
                     await TerminateLastAsync(clearHistory: true);
                 }
@@ -133,9 +130,9 @@ namespace Game.Core.Services
             var gameScene = new TScene();
             gameScene.DialogInitializer = initializer;
             var tcs = CreateResultTcs<TResult>(gameScene);
-            _gameScenes.AddLast((type, gameScene));
+            _gameScenes.AddLast(gameScene);
             await TransitionCore(gameScene, isDialog: true);
-            return await ResultCore(type, tcs);
+            return await ResultCore(gameScene, tcs);
         }
 
         // 主に遷移前に現在のシーンに対して何かする
@@ -201,14 +198,14 @@ namespace Game.Core.Services
             await gameScene.Ready();
         }
 
-        private async Task<TResult> ResultCore<TResult>(Type type, UniTaskCompletionSource<TResult> tcs)
+        private async Task<TResult> ResultCore<TResult>(IGameScene gameScene, UniTaskCompletionSource<TResult> tcs)
         {
             if (tcs == null) return default;
 
             try
             {
                 var result = await tcs.Task;
-                await TerminateAsync(type, clearHistory: true); // リザルトがセットされ、プロセスが終わったら閉じる, 遷移履歴も消す
+                await TerminateAsync(gameScene, clearHistory: true); // リザルトがセットされ、プロセスが終わったら閉じる, 遷移履歴も消す
                 return result;
             }
             catch (OperationCanceledException)
@@ -225,8 +222,8 @@ namespace Game.Core.Services
             var currentNode = _gameScenes.Last;
             if (currentNode != null)
             {
-                var target = currentNode.Value;
-                return target.type == type && target.gameScene.State is GameSceneState.Processing;
+                var gameScene = currentNode.Value;
+                return gameScene.GetType() == type && gameScene.State is GameSceneState.Processing;
             }
 
             return false;
@@ -237,11 +234,11 @@ namespace Game.Core.Services
             var currentNode = _gameScenes.Last;
             if (currentNode != null)
             {
-                var target = currentNode.Value;
-                if (target.gameScene != null)
+                var gameScene = currentNode.Value;
+                if (gameScene != null)
                 {
-                    target.gameScene.State = GameSceneState.Sleep;
-                    return target.gameScene.Sleep();
+                    gameScene.State = GameSceneState.Sleep;
+                    return gameScene.Sleep();
                 }
             }
 
@@ -253,25 +250,36 @@ namespace Game.Core.Services
             var currentNode = _gameScenes.Last;
             if (currentNode != null)
             {
-                var target = currentNode.Value;
-                if (target.gameScene != null)
+                var gameScene = currentNode.Value;
+                if (gameScene != null)
                 {
-                    target.gameScene.State = GameSceneState.Processing;
-                    return target.gameScene.Restart();
+                    gameScene.State = GameSceneState.Processing;
+                    return gameScene.Restart();
                 }
             }
 
             return Task.CompletedTask;
         }
 
+        public async Task TerminateAsync(IGameScene gameScene, bool clearHistory = false)
+        {
+            var node = _gameScenes.FindLast(gameScene);
+            if (node != null)
+            {
+                await TerminateCore(node.Value);
+
+                if (clearHistory) _gameScenes.Remove(node);
+            }
+        }
+
         public async Task TerminateAsync(Type type, bool clearHistory = false)
         {
-            var target = _gameScenes.LastOrDefault(x => x.type == type);
-            if (target.gameScene != null)
+            var gameScene = _gameScenes.LastOrDefault(x => x.GetType() == type);
+            if (gameScene != null)
             {
-                await TerminateCore(target.gameScene);
+                await TerminateCore(gameScene);
 
-                if (clearHistory) _gameScenes.Remove(target);
+                if (clearHistory) _gameScenes.Remove(gameScene);
             }
         }
 
@@ -281,29 +289,29 @@ namespace Game.Core.Services
             var currentNode = _gameScenes.Last;
             if (currentNode != null)
             {
-                var target = currentNode.Value;
-                if (target.gameScene != null)
+                var gameScene = currentNode.Value;
+                if (gameScene != null)
                 {
-                    await TerminateAsync(target.type, clearHistory);
+                    await TerminateAsync(gameScene, clearHistory);
                 }
             }
         }
 
         private async Task TerminateAllDialogAsync()
         {
-            foreach (var (type, gameScene) in _gameScenes.Reverse())
+            foreach (var gameScene in _gameScenes.Reverse())
             {
                 // リザルト持ちのシーンもダイアログとする
                 if (gameScene is IGameSceneResult)
                 {
-                    await TerminateAsync(type, clearHistory: true);
+                    await TerminateAsync(gameScene, clearHistory: true);
                 }
             }
         }
 
         private async Task TerminateAllAsync()
         {
-            foreach (var (_, gameScene) in _gameScenes.Reverse())
+            foreach (var gameScene in _gameScenes.Reverse())
             {
                 await TerminateCore(gameScene);
             }
