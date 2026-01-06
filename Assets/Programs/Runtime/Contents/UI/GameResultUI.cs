@@ -61,10 +61,16 @@ namespace Game.Contents.UI
         private TextMeshProUGUI _maxHp;
 
         [SerializeField]
+        private TextMeshProUGUI _score;
+
+        [SerializeField]
         private Button _nextButton;
 
         [SerializeField]
         private Button _returnButton;
+
+        [SerializeField]
+        private Button _totalResultButton;
 
         public void Initialize(GameResultUIDialog dialog, GameStageResultData data)
         {
@@ -87,6 +93,8 @@ namespace Game.Contents.UI
             _hp.text = data.PlayerCurrentHp.ToString();
             _maxHp.text = data.PlayerMaxHp.ToString();
 
+            _score.text = data.CalculateScore().ToString();
+
             bool showNext = data.StageResult is GameStageResult.Clear && data.NextStageId.HasValue;
             _nextButton.gameObject.SetActive(showNext);
             if (showNext)
@@ -95,20 +103,39 @@ namespace Game.Contents.UI
                     .SubscribeAwait(async (_, token) =>
                     {
                         SetInteractable(false);
-                        await GlobalMessageBroker.GetAsyncPublisher<int, int?>().PublishAsync(MessageKey.GameStage.Finish, data.NextStageId, token);
+                        await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameStage.Finish, true, token);
                         dialog.TrySetResult(true);
                     })
                     .AddTo(this);
             }
 
-            _returnButton.OnClickAsObservableThrottleFirst()
-                .SubscribeAwait(async (_, token) =>
-                {
-                    SetInteractable(false);
-                    await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameStage.ReturnTitle, true, token);
-                    dialog.TrySetResult(false);
-                })
-                .AddTo(this);
+            bool showReturn = data.NextStageId.HasValue;
+            _returnButton.gameObject.SetActive(showReturn);
+            if (showReturn)
+            {
+                _returnButton.OnClickAsObservableThrottleFirst()
+                    .SubscribeAwait(async (_, token) =>
+                    {
+                        SetInteractable(false);
+                        await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameStage.ReturnTitle, true, token);
+                        dialog.TrySetResult(false);
+                    })
+                    .AddTo(this);
+            }
+
+            bool showTotalResult = !data.NextStageId.HasValue;
+            _totalResultButton.gameObject.SetActive(showTotalResult);
+            if (showTotalResult)
+            {
+                _totalResultButton.OnClickAsObservableThrottleFirst()
+                    .SubscribeAwait(async (_, token) =>
+                    {
+                        SetInteractable(false);
+                        await GlobalMessageBroker.GetAsyncPublisher<int, bool>().PublishAsync(MessageKey.GameStage.Finish, true, token);
+                        dialog.TrySetResult(true);
+                    })
+                    .AddTo(this);
+            }
         }
 
         private void SetInteractable(bool interactable)

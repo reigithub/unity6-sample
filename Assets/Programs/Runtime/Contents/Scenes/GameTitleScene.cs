@@ -10,30 +10,45 @@ namespace Game.Contents.Scenes
 
         public override Task Startup()
         {
-            GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.TimeScale, true);
-            GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.Cursor, true);
-            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.System.DirectionalLight, false);
-            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.InputSystem.Escape, false);
-            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.InputSystem.ScrollWheel, false);
-
+            OnEnable();
             SceneComponent.Initialize();
 
             return base.Startup();
         }
 
-        public override Task Ready()
+        public override Task Sleep()
         {
-            SceneComponent.OnReady();
-            return base.Ready();
+            OnDisable();
+            return base.Sleep();
+        }
+
+        public override async Task Ready()
+        {
+            OnEnable();
+            await base.Ready();
+            await SceneComponent.ReadyAsync();
         }
 
         public override Task Terminate()
         {
+            OnDisable();
+            return base.Terminate();
+        }
+
+        private void OnEnable()
+        {
+            GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.TimeScale, true);
+            GlobalMessageBroker.GetAsyncPublisher<int, bool>().Publish(MessageKey.System.Cursor, true);
+            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.System.DirectionalLight, false);
+            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.InputSystem.Escape, false);
+            GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.InputSystem.ScrollWheel, false);
+        }
+
+        private void OnDisable()
+        {
             GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.System.DirectionalLight, true);
             GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.InputSystem.Escape, true);
             GlobalMessageBroker.GetPublisher<int, bool>().Publish(MessageKey.InputSystem.ScrollWheel, true);
-
-            return base.Terminate();
         }
     }
 }

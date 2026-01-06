@@ -12,17 +12,17 @@ using UnityEngine.SceneManagement;
 
 namespace Game.Core.Scenes
 {
-    public interface IGameScene
+    public interface IGameScene : IGameSceneState, IGameSceneArgHandler
     {
-        // アセット(主にこのシーン)をロード
-        public virtual Task LoadAsset()
+        // 事前初期化処理
+        // サーバー通信, モデルクラスの初期化など
+        public virtual Task PreInitialize()
         {
             return Task.CompletedTask;
         }
 
-        // 事前初期化処理
-        // サーバー通信など…???
-        public virtual Task PreInitialize()
+        // アセット(主にこのシーン)をロード
+        public virtual Task LoadAsset()
         {
             return Task.CompletedTask;
         }
@@ -78,17 +78,30 @@ namespace Game.Core.Scenes
 
         protected abstract string AssetPathOrAddress { get; }
 
-        public virtual Task LoadAsset()
-        {
-            return Task.CompletedTask;
-        }
+        public GameSceneState State { get; set; }
+        public Func<IGameScene, Task> ArgHandler { get; set; }
 
         public virtual Task PreInitialize()
         {
             return Task.CompletedTask;
         }
 
+        public virtual Task LoadAsset()
+        {
+            return Task.CompletedTask;
+        }
+
         public virtual Task Startup()
+        {
+            return Task.CompletedTask;
+        }
+
+        public virtual Task Sleep()
+        {
+            return Task.CompletedTask;
+        }
+
+        public virtual Task Restart()
         {
             return Task.CompletedTask;
         }
@@ -104,16 +117,19 @@ namespace Game.Core.Scenes
         }
     }
 
-    // Memo: Arg, Resultと同じく任意でつけられるという事にする
-    public interface IGameSceneModel<TSceneModel>
-        where TSceneModel : class, new()
+    public interface IGameSceneState
     {
-        public TSceneModel SceneModel { get; set; }
+        GameSceneState State { get; set; }
     }
 
     public interface IGameSceneArg<TArg>
     {
-        public Task PreInitialize(TArg arg) => Task.CompletedTask;
+        public Task ArgHandle(TArg arg) => Task.CompletedTask;
+    }
+
+    public interface IGameSceneArgHandler
+    {
+        public Func<IGameScene, Task> ArgHandler { get; set; }
     }
 
     public interface IGameSceneResult<TResult>
@@ -123,10 +139,9 @@ namespace Game.Core.Scenes
 
     // 任意パラメータを受け取りつつ処理を挟みたいとき
     // 主にダイアログ
-    // プロセス毎に分けるか要検討
-    public interface IGameSceneInitializer<TScene, TSceneComponent>
+    public interface IGameSceneStartupHandler<TScene, TSceneComponent>
     {
-        public Func<TScene, TSceneComponent, Task> Initializer { get; set; }
+        public Func<TScene, TSceneComponent, Task> StartupHandler { get; set; }
     }
 
     public abstract class GameScene<TGameScene, TGameSceneComponent> : GameScene
@@ -136,20 +151,37 @@ namespace Game.Core.Scenes
         public TGameScene Scene { get; set; }
         public TGameSceneComponent SceneComponent { get; protected set; }
 
-        public override Task LoadAsset()
-        {
-            return LoadScene();
-        }
-
         public override Task PreInitialize()
         {
-            SceneComponent = GetSceneComponent();
             return base.PreInitialize();
+        }
+
+        public override async Task LoadAsset()
+        {
+            await LoadScene();
+            SceneComponent = GetSceneComponent();
         }
 
         public override Task Startup()
         {
             return base.Startup();
+        }
+
+        public override Task Ready()
+        {
+            return base.Ready();
+        }
+
+        public override Task Sleep()
+        {
+            SceneComponent.Sleep();
+            return base.Sleep();
+        }
+
+        public override Task Restart()
+        {
+            SceneComponent.Restart();
+            return Ready();
         }
 
         public override async Task Terminate()
@@ -239,9 +271,9 @@ namespace Game.Core.Scenes
 
         private SceneInstance _instance;
 
-        public override Task LoadAsset()
+        public override async Task LoadAsset()
         {
-            return LoadScene();
+            await LoadScene();
         }
 
         public override async Task Terminate()
@@ -261,33 +293,38 @@ namespace Game.Core.Scenes
         }
     }
 
+    public interface IGameDialogScene
+    {
+    }
+
     // 主にダイアログ用(オーバーレイ表示想定)
     // Memo: MonoBehaviourを使う以上、C#では多重継承できないので、個別作成
-    public abstract class GameDialogScene<TScene, TSceneComponent, TResult> : GameScene<TScene, TSceneComponent>, IGameSceneInitializer<TScene, TSceneComponent>, IGameSceneResult<TResult>
+    public abstract class GameDialogScene<TScene, TSceneComponent, TResult> : GameScene<TScene, TSceneComponent>,
+        IGameDialogScene, IGameSceneStartupHandler<TScene, TSceneComponent>, IGameSceneResult<TResult>
         where TScene : IGameScene
         where TSceneComponent : GameSceneComponent
     {
-        public Func<TScene, TSceneComponent, Task> Initializer { get; set; }
+        public Func<TScene, TSceneComponent, Task> StartupHandler { get; set; }
 
         public UniTaskCompletionSource<TResult> ResultTcs { get; set; }
 
         private GameObject _asset;
         private GameObject _instance;
 
-        public override Task LoadAsset()
-        {
-            return LoadScene();
-        }
-
         public override Task PreInitialize()
         {
-            SceneComponent = GetSceneComponent();
             return Task.CompletedTask;
+        }
+
+        public override async Task LoadAsset()
+        {
+            await LoadScene();
+            SceneComponent = GetSceneComponent();
         }
 
         public override Task Startup()
         {
-            Initializer?.Invoke(Scene, SceneComponent);
+            StartupHandler?.Invoke(Scene, SceneComponent);
             return Task.CompletedTask;
         }
 

@@ -59,10 +59,21 @@ namespace Game.Core.Services
             return service;
         }
 
-        public void AddService<T>()
+        public void StartupService<T>()
             where T : GameService, new()
         {
             TryGetOrAddService<T>(out _);
+        }
+
+        public void ShutdownService<T>()
+            where T : GameService
+        {
+            var name = typeof(T).Name;
+            if (_gameServiceByName.TryGetValue(name, out var service))
+            {
+                service.Shutdown();
+                _gameServiceByName.Remove(name);
+            }
         }
 
         private void ClearCacheIfTransientOnMemory<T>()
@@ -70,7 +81,7 @@ namespace Game.Core.Services
         {
             var transientCount = _gameServiceByName.Values
                 .Count(x => x.GetType() != typeof(T) && !x.AllowResidentOnMemory);
-            if (transientCount > TransientOnMemoryBuffer)
+            if (transientCount <= TransientOnMemoryBuffer)
                 return;
 
             var (name, service) = _gameServiceByName
