@@ -261,7 +261,7 @@ namespace Game.Core.Services
             return Task.CompletedTask;
         }
 
-        public async Task TerminateAsync(IGameScene gameScene, bool clearHistory = false)
+        private async Task TerminateAsync(IGameScene gameScene, bool clearHistory = false)
         {
             var node = _gameScenes.FindLast(gameScene);
             if (node != null)
