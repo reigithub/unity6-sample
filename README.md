@@ -1,1 +1,64 @@
-# unity6-sample
+## TL;DR
+* このプロジェクトは主に個人または小規模のUnityゲーム開発におけるスターターキットを目指して作成されています
+* コードの再利用性を高め、実装のしやすさや可読性が向上するような作りを意識しています
+* インゲーム／アウトゲーム共に(細かい部分を除いて)マスターデータで動作しています(データ駆動型)
+* MVCパターン
+
+## 機能一覧
+* プレハブシーン／ダイアログ遷移機能
+* マスターデータ(TSV)更新／読込
+* マスターデータ用のUnityエディタ拡張
+* 簡単なデモゲーム
+* その他簡易的なオーディオ再生など
+
+## 機能詳細
+* シーン遷移やオーディオ再生などの共通機能は主にゲームサービスとして分離されています
+* シーン遷移機能は前のシーンが破棄されていても遷移履歴から再遷移が可能
+* 現在シーンをスリープさせて次のシーンへ遷移でき、戻るとスリープ状態から復帰可能
+* シーン実装は起動前／ロード時／初期化時／スリープ時／復帰時／終了時など様々なタイミングで追加処理を挟む事ができます
+* また、任意で引数や戻り値を追加で設定できます
+* 引数つきのシーンであっても、履歴から状態を復元して再度引数を渡して遷移する事が可能
+* ダイアログ(オーバーレイ)は複数開く事が可能で、不正な挙動を防止するためにシーン遷移時に全て破棄されます
+* インゲームシーンはPrefabシーン＋Unityシーンで構成されており、ステージとなるUnityシーンはロジックから分離されています。その為、コード修正なしで新しいステージを追加できます
+* アウトゲームシーンは遷移挙動のカスタマイズ性を担保するため、全てPrefabシーンを採用しています
+
+## 機能コードリンク
+* シーン遷移サービス : [GameSceneService.cs](https://github.com/reigithub/unity6-sample/blob/7ae9559318c24b5ee49e6e01d581b28df373a749/Assets/Programs/Runtime/Core/Services/GameSceneService.cs)
+* シーン基底クラス : [GameScene.cs](https://github.com/reigithub/unity6-sample/blob/7ae9559318c24b5ee49e6e01d581b28df373a749/Assets/Programs/Runtime/Core/Scenes/GameScene.cs)
+* マスターデータエディタ拡張 : [MasterDataWindow.cs](https://github.com/reigithub/unity6-sample/blob/7ae9559318c24b5ee49e6e01d581b28df373a749/Assets/Programs/Runtime/Core/MasterData/Editor/MasterDataWindow.cs)
+
+## 使用言語／ライブラリ／ツールなど
+
+| 言語・フレームワーク等 | バージョン  |
+| -------------------- | ---------- |
+| Unity                | 6000.3.2f1 |
+| C#                   | 9.0        |
+| cysharp/MessagePipe  | 1.8.1      |
+| cysharp/R3           | 1.3.0      |
+| cysharp/UniTask      | 2.5.10     |
+| cysharp/MasterMemory | 3.0.4      |
+| cysharp/MemoryPack   | 3.1.3      |
+| DOTween              | 1.2.790    |
+| HotReload            | 1.13.13    |
+---
+| IDE等                | バージョン  |
+| -------------------- | ---------- |
+| JetBrains Rider      | 2025.3.0.2 |
+| VSCode               | 1.107.1    |
+
+# アセット
+* 主にUnityAssetStoreのもので自作は含まれません
+* Unityちゃん: https://unity-chan.com/ (© Unity Technologies Japan/UCL)
+
+# 制作期間
+* 2週間程度 (2026/1/5時点)
+
+# 今後の予定
+* MessageBroker周りの冗長な呼び出しコードの改善検討
+* テストコード追加
+* プレイヤー／エネミー挙動周りのStateMachine化
+* EnhancedScroller実装サンプル
+* リストのソート／フィルタ機能サンプル
+* オーディオ音量オプション画面
+* デモゲームの高度化を目指した仕様変更または新規実装
+* VContainerなどDIライブラリ導入検討
