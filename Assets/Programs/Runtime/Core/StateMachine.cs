@@ -9,7 +9,7 @@ using UnityEngine.Scripting;
 
 namespace Game.Core
 {
-    public interface IStateMachineContext<TContext>
+    public interface IStateMachineContext<out TContext>
     {
         public TContext Context { get; }
     }
@@ -27,12 +27,22 @@ namespace Game.Core
         {
         }
 
+        // MonoBehavior.FixedUpdate
+        protected internal virtual void FixedUpdate()
+        {
+        }
+
+        // MonoBehavior.LateUpdate
+        protected internal virtual void LateUpdate()
+        {
+        }
+
         protected internal virtual void Exit()
         {
         }
     }
 
-    public sealed class StateMachine<TContext> : IStateMachineContext<TContext>
+    public class StateMachine<TContext> : IStateMachineContext<TContext>
     {
         private enum StateUpdateType
         {
@@ -57,7 +67,7 @@ namespace Game.Core
             Context = context;
         }
 
-        public void AddTransition<TFromState, TToState>(int eventId)
+        public void AddTransition<TFromState, TToState>(int eventKey)
             where TFromState : State<TContext>, new()
             where TToState : State<TContext>, new()
         {
@@ -66,40 +76,40 @@ namespace Game.Core
             var fromState = typeof(TFromState);
             var toState = typeof(TToState);
 
-            if (!_fromToTransitions.ContainsKey(eventId))
-                _fromToTransitions[eventId] = new Dictionary<State<TContext>, State<TContext>>();
+            if (!_fromToTransitions.ContainsKey(eventKey))
+                _fromToTransitions[eventKey] = new Dictionary<State<TContext>, State<TContext>>();
 
             var from = GetOrAddState<TFromState>();
             var to = GetOrAddState<TToState>();
 
             if (from == null || to == null) return;
 
-            if (_fromToTransitions[eventId].ContainsKey(from))
+            if (_fromToTransitions[eventKey].ContainsKey(from))
             {
-                throw new InvalidOperationException($"Transition already exists: {fromState.Name} -> {toState.Name}, EventId: {eventId}");
+                throw new InvalidOperationException($"Transition already exists: {fromState.Name} -> {toState.Name}, EventId: {eventKey}");
             }
 
-            _fromToTransitions[eventId][from] = to;
+            _fromToTransitions[eventKey][from] = to;
         }
 
-        public void AddTransition<TAnyState>(int eventId) where TAnyState : State<TContext>, new()
+        public void AddTransition<TAnyState>(int eventKey) where TAnyState : State<TContext>, new()
         {
             ThrowExceptionIfProcessing();
 
             var anyState = typeof(TAnyState);
 
-            if (!_anyTransitions.ContainsKey(eventId))
-                _anyTransitions[eventId] = new HashSet<State<TContext>>();
+            if (!_anyTransitions.ContainsKey(eventKey))
+                _anyTransitions[eventKey] = new HashSet<State<TContext>>();
 
             var any = GetOrAddState<TAnyState>();
             if (any == null) return;
 
-            if (_anyTransitions[eventId].Contains(any))
+            if (_anyTransitions[eventKey].Contains(any))
             {
-                throw new InvalidOperationException($"Transition already exists: {anyState.Name}, EventId: {eventId}");
+                throw new InvalidOperationException($"Transition already exists: {anyState.Name}, EventId: {eventKey}");
             }
 
-            _anyTransitions[eventId].Add(any);
+            _anyTransitions[eventKey].Add(any);
         }
 
         public void SetInitState<TInitState>() where TInitState : State<TContext>, new()
@@ -125,7 +135,11 @@ namespace Game.Core
             return newState;
         }
 
-        public bool TransitionState(int eventId)
+        /// <summary>
+        /// 遷移テーブルに基づいた遷移を実行
+        /// </summary>
+        /// <param name="eventKey">どの遷移を実行するかを管理するKeyを指定</param>
+        public bool TransitionState(int eventKey)
         {
             ThrowExceptionIfNotProcessing();
 
@@ -135,14 +149,14 @@ namespace Game.Core
             if (_currentState == null || _nextState != null)
                 return false;
 
-            if (_fromToTransitions.ContainsKey(eventId) && _fromToTransitions[eventId].ContainsKey(_currentState))
+            if (_fromToTransitions.ContainsKey(eventKey) && _fromToTransitions[eventKey].ContainsKey(_currentState))
             {
-                var nextState = _fromToTransitions[eventId][_currentState];
+                var nextState = _fromToTransitions[eventKey][_currentState];
                 _currentState = nextState;
             }
-            else if (_anyTransitions.ContainsKey(eventId) && _anyTransitions[eventId].Contains(_currentState))
+            else if (_anyTransitions.ContainsKey(eventKey) && _anyTransitions[eventKey].Contains(_currentState))
             {
-                var nextState = _anyTransitions[eventId].FirstOrDefault(x => x == _currentState);
+                var nextState = _anyTransitions[eventKey].FirstOrDefault(x => x == _currentState);
                 _currentState = nextState;
             }
             else
@@ -152,6 +166,24 @@ namespace Game.Core
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 遷移テーブルを無視したState直接指定の遷移
+        /// </summary>
+        public void TransitionTo<TState>() where TState : State<TContext>, new()
+        {
+            if (_stateUpdateType == StateUpdateType.Exit)
+                throw new InvalidOperationException("Cannot transition during Exit");
+
+            _nextState = GetOrAddState<TState>();
+        }
+
+        public bool IsCurrentState<TState>() where TState : State<TContext>
+        {
+            ThrowExceptionIfNotProcessing();
+
+            return _currentState.GetType() == typeof(TState);
         }
 
         public bool IsProcessing()
@@ -171,16 +203,12 @@ namespace Game.Core
                 throw new InvalidOperationException("State Machine is not Running!!");
         }
 
-        public void Update()
+        public virtual void Update()
         {
+            // プロセスが開始されていなければ、初期Stateをセットしてステートマシーンを起動する
             if (!IsProcessing())
             {
-                if (_nextState == null)
-                {
-                    throw new InvalidOperationException("Next State is Nothing!!");
-                }
-
-                _currentState = _nextState;
+                _currentState = _nextState ?? throw new InvalidOperationException("Next State is Nothing!!");
                 _nextState = null;
 
                 try
@@ -205,6 +233,7 @@ namespace Game.Core
                 }
             }
 
+            // ステートマシーン更新処理
             try
             {
                 if (_nextState == null)
@@ -235,16 +264,16 @@ namespace Game.Core
             }
         }
 
-        public bool IsCurrentState<TState>() where TState : State<TContext>
+        public virtual void FixedUpdate()
         {
-            ThrowExceptionIfNotProcessing();
-
-            return _currentState.GetType() == typeof(TState);
+            if (_currentState != null)
+                _currentState.FixedUpdate();
         }
 
-        public string GetCurrentStateName()
+        public virtual void LateUpdate()
         {
-            return IsProcessing() ? _currentState.GetType().Name : string.Empty;
+            if (_currentState != null)
+                _currentState.LateUpdate();
         }
     }
 }
