@@ -277,7 +277,7 @@ namespace Game.Contents.Player
 
         private class IdleState : State<SDUnityChanPlayerController>
         {
-            protected internal override void Update()
+            public override void Update()
             {
                 var controller = Context;
 
@@ -305,7 +305,7 @@ namespace Game.Contents.Player
 
         private class MovingState : State<SDUnityChanPlayerController>
         {
-            protected internal override void Update()
+            public override void Update()
             {
                 var controller = Context;
 
@@ -336,7 +336,7 @@ namespace Game.Contents.Player
                 }
             }
 
-            protected internal override void FixedUpdate()
+            public override void FixedUpdate()
             {
                 var controller = Context;
 
@@ -366,7 +366,7 @@ namespace Game.Contents.Player
 
         private class JumpingState : State<SDUnityChanPlayerController>
         {
-            protected internal override void Enter()
+            public override void Enter()
             {
                 var controller = Context;
 
@@ -381,7 +381,7 @@ namespace Game.Contents.Player
                 controller._jumpTriggered = false;
             }
 
-            protected internal override void Update()
+            public override void Update()
             {
                 var controller = Context;
 
@@ -399,7 +399,7 @@ namespace Game.Contents.Player
                 }
             }
 
-            protected internal override void FixedUpdate()
+            public override void FixedUpdate()
             {
                 var controller = Context;
 
@@ -427,14 +427,14 @@ namespace Game.Contents.Player
 
         private class DamagedState : State<SDUnityChanPlayerController>
         {
-            protected internal override void Enter()
+            public override void Enter()
             {
                 var controller = Context;
                 controller._jumpTriggered = false;
                 controller.AudioService.PlayRandomOneAsync(AudioCategory.Voice, AudioPlayTag.PlayerDamaged).Forget();
             }
 
-            protected internal override void Update()
+            public override void Update()
             {
                 var controller = Context;
 
@@ -455,7 +455,7 @@ namespace Game.Contents.Player
 
         private class DownState : State<SDUnityChanPlayerController>
         {
-            protected internal override void Enter()
+            public override void Enter()
             {
                 var controller = Context;
                 controller._jumpTriggered = false;
@@ -463,7 +463,7 @@ namespace Game.Contents.Player
                 controller.AudioService.PlayRandomOneAsync(AudioCategory.Voice, AudioPlayTag.PlayerDown).Forget();
             }
 
-            protected internal override void Update()
+            public override void Update()
             {
                 var controller = Context;
 
