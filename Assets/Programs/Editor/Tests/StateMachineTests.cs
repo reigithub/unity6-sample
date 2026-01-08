@@ -207,7 +207,7 @@ namespace Game.Editor.Tests
             stateMachine.SetInitState<StateA>();
             stateMachine.Update();
 
-            Assert.That(stateMachine.Transition(TestEvent.ToStateB), Is.True);
+            Assert.That(stateMachine.Transition(TestEvent.ToStateB), Is.EqualTo(StateEventResult.Success));
             stateMachine.Update();
 
             Assert.That(stateMachine.IsCurrentState<StateB>(), Is.True);
@@ -267,7 +267,7 @@ namespace Game.Editor.Tests
         #region Transition Tests
 
         [Test]
-        public void Transition_ValidTransition_ReturnsTrue()
+        public void Transition_ValidTransition_ReturnsSuccess()
         {
             var context = new TestContext();
             var stateMachine = new StateMachine<TestContext, TestEvent>(context);
@@ -278,11 +278,11 @@ namespace Game.Editor.Tests
 
             var result = stateMachine.Transition(TestEvent.ToStateB);
 
-            Assert.That(result, Is.True);
+            Assert.That(result, Is.EqualTo(StateEventResult.Success));
         }
 
         [Test]
-        public void Transition_InvalidTransition_ReturnsFalse()
+        public void Transition_InvalidTransition_ReturnsFailed()
         {
             var context = new TestContext();
             var stateMachine = new StateMachine<TestContext, TestEvent>(context);
@@ -293,7 +293,7 @@ namespace Game.Editor.Tests
 
             var result = stateMachine.Transition(TestEvent.ToStateC);
 
-            Assert.That(result, Is.False);
+            Assert.That(result, Is.EqualTo(StateEventResult.Failed));
         }
 
         [Test]
@@ -305,11 +305,14 @@ namespace Game.Editor.Tests
             stateMachine.AddTransition<StateA, StateB>(TestEvent.ToStateB);
             stateMachine.SetInitState<StateA>();
 
+            // var result = stateMachine.Transition(TestEvent.ToStateB);
+            // Assert.That(result, Is.EqualTo(StateEventResult.Failed));
+
             Assert.Throws<InvalidOperationException>(() => stateMachine.Transition(TestEvent.ToStateB));
         }
 
         [Test]
-        public void Transition_WhenNextStateAlreadySet_ReturnsFalse()
+        public void Transition_WhenNextStateAlreadySet_ReturnsWaiting()
         {
             var context = new TestContext();
             var stateMachine = new StateMachine<TestContext, TestEvent>(context);
@@ -322,7 +325,7 @@ namespace Game.Editor.Tests
             stateMachine.Transition(TestEvent.ToStateB);
             var result = stateMachine.Transition(TestEvent.ToStateC);
 
-            Assert.That(result, Is.False);
+            Assert.That(result, Is.EqualTo(StateEventResult.Waiting));
         }
 
         [Test]
@@ -651,15 +654,15 @@ namespace Game.Editor.Tests
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<StateA>(), Is.True);
 
-            stateMachine.Transition(TestEvent.ToStateB);
+            Assert.That(stateMachine.Transition(TestEvent.ToStateB), Is.EqualTo(StateEventResult.Success));
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<StateB>(), Is.True);
 
-            stateMachine.Transition(TestEvent.ToStateC);
+            Assert.That(stateMachine.Transition(TestEvent.ToStateC), Is.EqualTo(StateEventResult.Success));
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<StateC>(), Is.True);
 
-            stateMachine.Transition(TestEvent.ToStateA);
+            Assert.That(stateMachine.Transition(TestEvent.ToStateA), Is.EqualTo(StateEventResult.Success));
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<StateA>(), Is.True);
 
@@ -713,7 +716,7 @@ namespace Game.Editor.Tests
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<IntStateA>(), Is.True);
 
-            stateMachine.Transition(1);
+            Assert.That(stateMachine.Transition(1), Is.EqualTo(StateEventResult.Success));
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<IntStateB>(), Is.True);
         }

@@ -60,13 +60,20 @@ namespace Game.Core
         }
     }
 
+    public enum StateEventResult
+    {
+        Waiting, // 遷移リクエストしたが順番待ち、次回Updateで再度リクエスト
+        Success, // 遷移リクエストが受付られ、次回Updateで処理される
+        Failed,  // 遷移テーブルにないリクエスト
+    }
+
     /// <summary>
     /// ステートマシーン
     /// </summary>
     /// <typeparam name="TContext">コンテキスト型</typeparam>
-    /// <typeparam name="TEventKey">遷移ルール毎のイベントKeyの型</typeparam>
+    /// <typeparam name="TEvent">遷移ルール毎のイベントKeyの型</typeparam>
     /// <remarks>Memo: TEventKey型はenumくらいしか指定しないのでwhere制約つけてもいいのかもしれない</remarks>
-    public class StateMachine<TContext, TEventKey> : IStateMachineContext<TContext>
+    public class StateMachine<TContext, TEvent> : IStateMachineContext<TContext>
     {
         private enum StateUpdateType
         {
@@ -77,8 +84,8 @@ namespace Game.Core
         }
 
         private readonly HashSet<IState> _states = new();
-        private readonly Dictionary<TEventKey, Dictionary<IState, IState>> _fromToTransitionTable = new();
-        private readonly Dictionary<TEventKey, HashSet<IState>> _anyTransitionTable = new();
+        private readonly Dictionary<TEvent, Dictionary<IState, IState>> _fromToTransitionTable = new();
+        private readonly Dictionary<TEvent, HashSet<IState>> _anyTransitionTable = new();
 
         private StateUpdateType _stateUpdateType = StateUpdateType.Idle;
         private IState _currentState;
@@ -96,7 +103,7 @@ namespace Game.Core
         #region Build
 
         /// <summary>
-        /// 遷移ルールを追加
+        /// 遷移ルールを遷移テーブルに登録します
         /// </summary>
         /// <param name="eventKey">遷移ルールを識別するイベントKey値</param>
         /// <typeparam name="TFromState">遷移元ステート</typeparam>
@@ -105,9 +112,9 @@ namespace Game.Core
         /// <para>イベントKeyは遷移先ステートが判別できる名称が推奨されます</para>
         /// <para>イベントKey毎の遷移リストを保持します</para>
         /// </remarks>
-        public void AddTransition<TFromState, TToState>(TEventKey eventKey)
-            where TFromState : State<TContext, TEventKey>, new()
-            where TToState : State<TContext, TEventKey>, new()
+        public void AddTransition<TFromState, TToState>(TEvent eventKey)
+            where TFromState : State<TContext, TEvent>, new()
+            where TToState : State<TContext, TEvent>, new()
         {
             ThrowExceptionIfProcessing();
 
@@ -134,7 +141,7 @@ namespace Game.Core
         /// 任意ステートから遷移先に指定できるステートを設定
         /// </summary>
         /// <remarks>WARN: 優先度が低く遷移テーブルに見つからない場合のみ使用されます</remarks>
-        public void AddTransition<TAnyState>(TEventKey eventKey) where TAnyState : State<TContext, TEventKey>, new()
+        public void AddTransition<TAnyState>(TEvent eventKey) where TAnyState : State<TContext, TEvent>, new()
         {
             ThrowExceptionIfProcessing();
 
@@ -157,14 +164,14 @@ namespace Game.Core
         /// <summary>
         /// ステートマシーン処理開始時に初期状態となるステートを設定
         /// </summary>
-        public void SetInitState<TInitState>() where TInitState : State<TContext, TEventKey>, new()
+        public void SetInitState<TInitState>() where TInitState : State<TContext, TEvent>, new()
         {
             ThrowExceptionIfProcessing();
 
             _nextState = GetOrAddState<TInitState>();
         }
 
-        private TState GetOrAddState<TState>() where TState : State<TContext, TEventKey>, new()
+        private TState GetOrAddState<TState>() where TState : State<TContext, TEvent>, new()
         {
             var stateType = typeof(TState);
             foreach (var state in _states)
@@ -188,7 +195,7 @@ namespace Game.Core
         /// 遷移テーブルに基づいた遷移を実行
         /// </summary>
         /// <param name="eventKey">どの遷移を実行するかを管理するKeyを指定</param>
-        public bool Transition(TEventKey eventKey)
+        public StateEventResult Transition(TEvent eventKey)
         {
             ThrowExceptionIfNotProcessing();
 
@@ -197,7 +204,7 @@ namespace Game.Core
 
             // 前回の遷移を開始する前なので、まだ遷移できない
             if (_currentState == null || _nextState != null)
-                return false;
+                return StateEventResult.Waiting;
 
             // 遷移テーブルから次の遷移先を更新
             if (_fromToTransitionTable.ContainsKey(eventKey) && _fromToTransitionTable[eventKey].ContainsKey(_currentState))
@@ -211,17 +218,18 @@ namespace Game.Core
             else
             {
                 // 遷移情報が登録されていない
-                return false;
+                // throw new InvalidOperationException("StateEvent Not Found.");
+                return StateEventResult.Failed;
             }
 
-            return true;
+            return StateEventResult.Success;
         }
 
         /// <summary>
         /// 遷移テーブルを無視したState直接指定の遷移
         /// WARN: 強制的に次に遷移すべきステートを上書きします
         /// </summary>
-        public void ForceTransition<TState>() where TState : State<TContext, TEventKey>, new()
+        public void ForceTransition<TState>() where TState : State<TContext, TEvent>, new()
         {
             if (_stateUpdateType == StateUpdateType.Exit)
                 throw new InvalidOperationException("Cannot transition during Exit");
@@ -237,7 +245,7 @@ namespace Game.Core
 
         #region Process
 
-        public bool IsCurrentState<TState>() where TState : State<TContext, TEventKey>
+        public bool IsCurrentState<TState>() where TState : State<TContext, TEvent>
         {
             ThrowExceptionIfNotProcessing();
 
