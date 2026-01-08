@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Game.Core.Enums;
+using Game.Core.MessagePipe;
 using Game.Core.Scenes;
 using Game.Core.Services;
 using NUnit.Framework;
@@ -15,11 +16,17 @@ namespace Game.Tests
     {
         private GameSceneService _service;
         private LinkedList<IGameScene> _gameScenes;
+        private MessageBrokerService _messageBrokerService;
 
         [SetUp]
         public void SetUp()
         {
+            _messageBrokerService = new MessageBrokerService();
+            _messageBrokerService.Startup();
+
+            // GameSceneServiceを取得
             _service = new GameSceneService();
+            _service.Startup();
             _gameScenes = GetPrivateField<LinkedList<IGameScene>>(_service, "_gameScenes");
         }
 
@@ -27,7 +34,13 @@ namespace Game.Tests
         public void TearDown()
         {
             _gameScenes.Clear();
+
+            _messageBrokerService.Shutdown();
+            _messageBrokerService = null;
+
+            _service.Shutdown();
             _service = null;
+            _messageBrokerService = null;
         }
 
         #region IsProcessing Tests
@@ -672,12 +685,641 @@ namespace Game.Tests
 
         #endregion
 
+        #region TransitionAsync Tests
+
+        [Test]
+        public async Task TransitionCore_AddsSceneToList()
+        {
+            var scene = new MockGameScene();
+            _gameScenes.AddLast(scene);
+
+            await SimulateTransitionCore(scene);
+
+            Assert.AreEqual(1, _gameScenes.Count);
+            Assert.IsInstanceOf<MockGameScene>(_gameScenes.First.Value);
+        }
+
+        [Test]
+        public async Task TransitionCore_SetsSceneStateToProcessing()
+        {
+            var scene = new MockGameScene();
+            _gameScenes.AddLast(scene);
+
+            await SimulateTransitionCore(scene);
+
+            Assert.AreEqual(GameSceneState.Processing, scene.State);
+        }
+
+        [Test]
+        public async Task TransitionCore_ExecutesFullLifecycle()
+        {
+            var scene = new MockGameScene();
+            _gameScenes.AddLast(scene);
+
+            await SimulateTransitionCore(scene);
+
+            Assert.IsTrue(scene.PreInitializeCalled);
+            Assert.IsTrue(scene.LoadAssetCalled);
+            Assert.IsTrue(scene.StartupCalled);
+            Assert.IsTrue(scene.ReadyCalled);
+        }
+
+        [Test]
+        public async Task TransitionWithArg_PassesArgumentToScene()
+        {
+            var scene = new MockGameSceneWithArg();
+            const string testArg = "TestArgument";
+
+            // ArgHandlerをセットアップ
+            SimulateCreateArgHandler(scene, testArg);
+            _gameScenes.AddLast(scene);
+
+            await SimulateTransitionCore(scene);
+
+            Assert.AreEqual(testArg, scene.ReceivedArg);
+        }
+
+        [Test]
+        public async Task TransitionWithArg_InvokesArgHandler()
+        {
+            var scene = new MockGameSceneWithArg();
+
+            SimulateCreateArgHandler(scene, "test");
+            _gameScenes.AddLast(scene);
+
+            await SimulateTransitionCore(scene);
+
+            Assert.IsNotNull(scene.ArgHandler);
+        }
+
+        [Test]
+        public async Task TransitionWithResult_CreatesResultTcs()
+        {
+            var scene = new MockGameSceneWithResult();
+            var tcs = SimulateCreateResultTcs<int>(scene);
+            _gameScenes.AddLast(scene);
+
+            // 遷移開始
+            var transitionTask = SimulateTransitionWithResultAsync(scene, tcs);
+
+            Assert.IsNotNull(scene.ResultTcs);
+
+            // 結果をセット
+            scene.ResultTcs.TrySetResult(42);
+            var result = await transitionTask;
+            Assert.AreEqual(42, result);
+        }
+
+        [Test]
+        public async Task TransitionWithArgAndResult_WorksCorrectly()
+        {
+            var scene = new MockGameSceneWithArgAndResult<string, int>();
+            const string inputArg = "InputData";
+            const int expectedResult = 100;
+
+            SimulateCreateArgHandler(scene, inputArg);
+            var tcs = SimulateCreateResultTcs<int>(scene);
+            _gameScenes.AddLast(scene);
+
+            var transitionTask = SimulateTransitionWithResultAsync(scene, tcs);
+
+            Assert.AreEqual(inputArg, scene.ReceivedArg);
+
+            scene.ResultTcs.TrySetResult(expectedResult);
+            var result = await transitionTask;
+
+            Assert.AreEqual(expectedResult, result);
+        }
+
+        [Test]
+        public async Task TransitionCore_MultipleTransitions_AddsAllScenes()
+        {
+            var scene1 = new MockGameScene();
+            var scene2 = new AnotherMockGameScene();
+
+            _gameScenes.AddLast(scene1);
+            await SimulateTransitionCore(scene1);
+
+            _gameScenes.AddLast(scene2);
+            await SimulateTransitionCore(scene2);
+
+            Assert.AreEqual(2, _gameScenes.Count);
+        }
+
+        [Test]
+        public async Task TransitionWithTerminateOperation_TerminatesPreviousScene()
+        {
+            var firstScene = new MockGameScene();
+            _gameScenes.AddLast(firstScene);
+            await SimulateTransitionCore(firstScene);
+
+            // 2番目の遷移でTerminate操作
+            await SimulateOperationAsync(GameSceneOperations.CurrentSceneTerminate);
+            var secondScene = new AnotherMockGameScene();
+            _gameScenes.AddLast(secondScene);
+            await SimulateTransitionCore(secondScene);
+
+            Assert.IsTrue(firstScene.TerminateCalled);
+            Assert.AreEqual(GameSceneState.Terminate, firstScene.State);
+        }
+
+        [Test]
+        public async Task TransitionWithSleepOperation_SleepsPreviousScene()
+        {
+            var firstScene = new MockGameScene();
+            _gameScenes.AddLast(firstScene);
+            await SimulateTransitionCore(firstScene);
+
+            // 2番目の遷移でSleep操作
+            await SimulateOperationAsync(GameSceneOperations.CurrentSceneSleep);
+            var secondScene = new AnotherMockGameScene();
+            _gameScenes.AddLast(secondScene);
+            await SimulateTransitionCore(secondScene);
+
+            Assert.IsTrue(firstScene.SleepCalled);
+            Assert.AreEqual(GameSceneState.Sleep, firstScene.State);
+        }
+
+        [Test]
+        public async Task TransitionWithClearHistoryOperation_RemovesPreviousScene()
+        {
+            var firstScene = new MockGameScene();
+            _gameScenes.AddLast(firstScene);
+            await SimulateTransitionCore(firstScene);
+
+            // Terminate + ClearHistory
+            await SimulateOperationAsync(GameSceneOperations.CurrentSceneTerminate | GameSceneOperations.CurrentSceneClearHistory);
+            var secondScene = new AnotherMockGameScene();
+            _gameScenes.AddLast(secondScene);
+            await SimulateTransitionCore(secondScene);
+
+            Assert.AreEqual(1, _gameScenes.Count);
+            Assert.IsInstanceOf<AnotherMockGameScene>(_gameScenes.First.Value);
+        }
+
+        [Test]
+        public async Task TransitionWithResult_Canceled_ReturnsDefault()
+        {
+            var scene = new MockGameSceneWithResult();
+            var tcs = SimulateCreateResultTcs<int>(scene);
+            _gameScenes.AddLast(scene);
+
+            var transitionTask = SimulateTransitionWithResultAsync(scene, tcs);
+
+            scene.ResultTcs.TrySetCanceled();
+
+            var result = await transitionTask;
+            Assert.AreEqual(default(int), result);
+        }
+
+        #endregion
+
+        #region TransitionPrevAsync Tests
+
+        [Test]
+        public async Task TransitionPrevAsync_WithSleepingPreviousScene_RestartsPreviousScene()
+        {
+            // Setup: Scene1 (sleeping) -> Scene2 (current)
+            var scene1 = new MockGameScene { State = GameSceneState.Sleep };
+            var scene2 = new MockGameScene { State = GameSceneState.Processing };
+            _gameScenes.AddLast(scene1);
+            _gameScenes.AddLast(scene2);
+
+            await SimulateTransitionPrevAsync();
+
+            Assert.IsTrue(scene2.TerminateCalled);
+            Assert.IsTrue(scene1.RestartCalled);
+        }
+
+        [Test]
+        public async Task TransitionPrevAsync_WithTerminatedPreviousScene_TransitionsToPrevious()
+        {
+            // Setup: Scene1 (terminated) -> Scene2 (current)
+            var scene1 = new MockGameScene { State = GameSceneState.Terminate };
+            var scene2 = new MockGameScene { State = GameSceneState.Processing };
+            _gameScenes.AddLast(scene1);
+            _gameScenes.AddLast(scene2);
+
+            await SimulateTransitionPrevAsync();
+
+            Assert.IsTrue(scene2.TerminateCalled);
+            Assert.IsTrue(scene1.PreInitializeCalled);
+        }
+
+        [Test]
+        public async Task TransitionPrevAsync_WithProcessingPreviousScene_TerminatesCurrentOnly()
+        {
+            // Setup: Scene1 (processing) -> Scene2 (current)
+            var scene1 = new MockGameScene { State = GameSceneState.Processing };
+            var scene2 = new AnotherMockGameScene { State = GameSceneState.Processing };
+            _gameScenes.AddLast(scene1);
+            _gameScenes.AddLast(scene2);
+
+            await SimulateTransitionPrevAsync();
+
+            Assert.IsTrue(scene2.TerminateCalled);
+        }
+
+        #endregion
+
+        #region TransitionDialogAsync Tests
+
+        [Test]
+        public async Task TransitionDialogAsync_AddsDialogToList()
+        {
+            var dialog = new TestDialogScene();
+            var tcs = SimulateCreateResultTcs<bool>(dialog);
+            _gameScenes.AddLast(dialog);
+
+            var dialogTask = SimulateTransitionDialogAsync(dialog, tcs);
+
+            Assert.AreEqual(1, _gameScenes.Count);
+            Assert.IsInstanceOf<TestDialogScene>(_gameScenes.First.Value);
+
+            dialog.TrySetResult(true);
+            var result = await dialogTask;
+            Assert.IsTrue(result);
+        }
+
+        [Test]
+        public async Task TransitionDialogAsync_WithInitializer_InvokesInitializer()
+        {
+            var dialog = new TestDialogScene();
+            var initializerCalled = false;
+
+            dialog.DialogInitializer = (component, result) =>
+            {
+                initializerCalled = true;
+                return UniTask.CompletedTask;
+            };
+
+            var tcs = SimulateCreateResultTcs<bool>(dialog);
+            _gameScenes.AddLast(dialog);
+
+            var dialogTask = SimulateTransitionDialogAsync(dialog, tcs);
+
+            dialog.TrySetResult(true);
+            await dialogTask;
+
+            Assert.IsTrue(initializerCalled);
+        }
+
+        [Test]
+        public async Task TransitionDialogAsync_WhenSameDialogIsProcessing_TerminatesExisting()
+        {
+            // 最初のダイアログ
+            var firstDialog = new TestDialogScene { State = GameSceneState.Processing };
+            firstDialog.ResultTcs = new UniTaskCompletionSource<bool>();
+            _gameScenes.AddLast(firstDialog);
+
+            // 同じ型のダイアログを再度開こうとする
+            var isProcessing = _service.IsProcessing(typeof(TestDialogScene));
+            if (isProcessing)
+            {
+                await _service.TerminateAsync(typeof(TestDialogScene), clearHistory: true);
+            }
+
+            Assert.IsTrue(firstDialog.TerminateCalled);
+        }
+
+        [Test]
+        public async Task TransitionDialogAsync_MultipleDialogs_CanStackDialogs()
+        {
+            var dialog1 = new TestDialogScene { State = GameSceneState.Processing };
+            var dialog2 = new TestDialogScene2 { State = GameSceneState.Processing };
+            dialog1.ResultTcs = new UniTaskCompletionSource<bool>();
+            dialog2.ResultTcs = new UniTaskCompletionSource<int>();
+
+            _gameScenes.AddLast(dialog1);
+            _gameScenes.AddLast(dialog2);
+
+            Assert.IsInstanceOf<IGameSceneResult>(dialog1);
+            Assert.IsInstanceOf<IGameSceneResult>(dialog2);
+            Assert.AreEqual(2, _gameScenes.Count);
+        }
+
+        [Test]
+        public async Task TransitionDialogAsync_DialogCanceled_ReturnsDefault()
+        {
+            var dialog = new TestDialogScene();
+            var tcs = SimulateCreateResultTcs<bool>(dialog);
+            _gameScenes.AddLast(dialog);
+
+            var dialogTask = SimulateTransitionDialogAsync(dialog, tcs);
+
+            dialog.TrySetCanceled();
+
+            var result = await dialogTask;
+            Assert.AreEqual(default(bool), result);
+        }
+
+        #endregion
+
+        #region Scene Operations Tests
+
+        [Test]
+        public async Task OperationAsync_WithNoOperation_DoesNothing()
+        {
+            var scene = new MockGameScene { State = GameSceneState.Processing };
+            _gameScenes.AddLast(scene);
+
+            await SimulateOperationAsync(GameSceneOperations.None);
+
+            Assert.IsFalse(scene.SleepCalled);
+            Assert.IsFalse(scene.RestartCalled);
+            Assert.IsFalse(scene.TerminateCalled);
+        }
+
+        [Test]
+        public async Task OperationAsync_WithSleep_SleepsCurrentScene()
+        {
+            var scene = new MockGameScene { State = GameSceneState.Processing };
+            _gameScenes.AddLast(scene);
+
+            await SimulateOperationAsync(GameSceneOperations.CurrentSceneSleep);
+
+            Assert.IsTrue(scene.SleepCalled);
+            Assert.AreEqual(GameSceneState.Sleep, scene.State);
+        }
+
+        [Test]
+        public async Task OperationAsync_WithRestart_RestartsCurrentScene()
+        {
+            var scene = new MockGameScene { State = GameSceneState.Sleep };
+            _gameScenes.AddLast(scene);
+
+            await SimulateOperationAsync(GameSceneOperations.CurrentSceneRestart);
+
+            Assert.IsTrue(scene.RestartCalled);
+            Assert.AreEqual(GameSceneState.Processing, scene.State);
+        }
+
+        [Test]
+        public async Task OperationAsync_WithTerminate_TerminatesCurrentScene()
+        {
+            var scene = new MockGameScene { State = GameSceneState.Processing };
+            _gameScenes.AddLast(scene);
+
+            await SimulateOperationAsync(GameSceneOperations.CurrentSceneTerminate);
+
+            Assert.IsTrue(scene.TerminateCalled);
+            Assert.AreEqual(GameSceneState.Terminate, scene.State);
+        }
+
+        [Test]
+        public async Task OperationAsync_ClosesAllDialogsBeforeOperation()
+        {
+            var regularScene = new MockGameScene { State = GameSceneState.Processing };
+            var dialogScene = new MockGameSceneWithResult { State = GameSceneState.Processing };
+            dialogScene.ResultTcs = new UniTaskCompletionSource<int>();
+            _gameScenes.AddLast(regularScene);
+            _gameScenes.AddLast(dialogScene);
+
+            await SimulateOperationAsync(GameSceneOperations.None);
+
+            Assert.AreEqual(GameSceneState.Terminate, dialogScene.State);
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private T GetPrivateField<T>(object obj, string fieldName)
         {
             var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
             return (T)field?.GetValue(obj);
+        }
+
+        /// <summary>
+        /// TransitionCoreの動作をシミュレート
+        /// GlobalMessageBrokerを使用してメッセージを発行
+        /// </summary>
+        private async UniTask SimulateTransitionCore(IGameScene gameScene, bool isDialog = false)
+        {
+            gameScene.State = GameSceneState.Processing;
+
+            if (gameScene.ArgHandler != null)
+                await gameScene.ArgHandler.Invoke(gameScene);
+
+            if (!isDialog)
+                await _messageBrokerService.GlobalMessageBroker.GetAsyncPublisher<int, bool>()
+                    .PublishAsync(MessageKey.GameScene.TransitionEnter, true);
+
+            await gameScene.PreInitialize();
+            await gameScene.LoadAsset();
+            await gameScene.Startup();
+
+            if (!isDialog)
+                await _messageBrokerService.GlobalMessageBroker.GetAsyncPublisher<int, bool>()
+                    .PublishAsync(MessageKey.GameScene.TransitionFinish, true);
+
+            await gameScene.Ready();
+        }
+
+        /// <summary>
+        /// CreateArgHandlerの動作をシミュレート
+        /// </summary>
+        private void SimulateCreateArgHandler<TArg>(IGameScene gameScene, TArg arg)
+        {
+            if (gameScene is IGameSceneArgHandler handler)
+            {
+                handler.ArgHandler = scene =>
+                {
+                    if (scene is IGameSceneArg<TArg> gameSceneArg)
+                        return gameSceneArg.ArgHandle(arg);
+
+                    return UniTask.CompletedTask;
+                };
+            }
+        }
+
+        /// <summary>
+        /// CreateResultTcsの動作をシミュレート
+        /// </summary>
+        private UniTaskCompletionSource<TResult> SimulateCreateResultTcs<TResult>(IGameScene gameScene)
+        {
+            if (gameScene is IGameSceneResult<TResult> result)
+            {
+                return result.ResultTcs = new UniTaskCompletionSource<TResult>();
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Result付き遷移をシミュレート
+        /// </summary>
+        private async UniTask<TResult> SimulateTransitionWithResultAsync<TResult>(IGameScene gameScene, UniTaskCompletionSource<TResult> tcs)
+        {
+            await SimulateTransitionCore(gameScene);
+
+            if (tcs == null) return default;
+
+            try
+            {
+                var result = await tcs.Task;
+                await SimulateTerminateAsync(gameScene, clearHistory: true);
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                tcs.TrySetCanceled();
+            }
+
+            return default;
+        }
+
+        /// <summary>
+        /// ダイアログ遷移をシミュレート
+        /// </summary>
+        private async UniTask<TResult> SimulateTransitionDialogAsync<TResult>(IGameScene gameScene, UniTaskCompletionSource<TResult> tcs)
+        {
+            await SimulateTransitionCore(gameScene, isDialog: true);
+
+            if (tcs == null) return default;
+
+            try
+            {
+                var result = await tcs.Task;
+                await SimulateTerminateAsync(gameScene, clearHistory: true);
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                tcs.TrySetCanceled();
+            }
+
+            return default;
+        }
+
+        /// <summary>
+        /// OperationAsyncの動作をシミュレート
+        /// </summary>
+        private async UniTask SimulateOperationAsync(GameSceneOperations operations)
+        {
+            // 全ダイアログを閉じる
+            await SimulateTerminateAllDialogAsync();
+
+            if (operations.HasFlag(GameSceneOperations.CurrentSceneSleep))
+            {
+                await SimulateSleepAsync();
+            }
+            else if (operations.HasFlag(GameSceneOperations.CurrentSceneRestart))
+            {
+                await SimulateRestartAsync();
+            }
+            else if (operations.HasFlag(GameSceneOperations.CurrentSceneTerminate))
+            {
+                bool clearHistory = operations.HasFlag(GameSceneOperations.CurrentSceneClearHistory);
+                await SimulateTerminateLastAsync(clearHistory);
+            }
+        }
+
+        /// <summary>
+        /// TransitionPrevAsyncの動作をシミュレート
+        /// </summary>
+        private async UniTask SimulateTransitionPrevAsync()
+        {
+            var prevNode = _gameScenes.Last?.Previous;
+            if (prevNode != null)
+            {
+                var gameScene = prevNode.Value;
+                if (gameScene.State is GameSceneState.Terminate)
+                {
+                    await SimulateTerminateLastAsync(clearHistory: true);
+                    await SimulateTransitionCore(gameScene);
+                }
+                else if (gameScene.State is GameSceneState.Sleep)
+                {
+                    await SimulateTerminateLastAsync(clearHistory: true);
+                    await SimulateRestartAsync();
+                }
+                else if (gameScene.State is GameSceneState.Processing)
+                {
+                    await SimulateTerminateLastAsync(clearHistory: true);
+                }
+            }
+        }
+
+        private UniTask SimulateSleepAsync()
+        {
+            var currentNode = _gameScenes.Last;
+            if (currentNode != null)
+            {
+                var gameScene = currentNode.Value;
+                if (gameScene != null)
+                {
+                    gameScene.State = GameSceneState.Sleep;
+                    return gameScene.Sleep();
+                }
+            }
+
+            return UniTask.CompletedTask;
+        }
+
+        private UniTask SimulateRestartAsync()
+        {
+            var currentNode = _gameScenes.Last;
+            if (currentNode != null)
+            {
+                var gameScene = currentNode.Value;
+                if (gameScene != null)
+                {
+                    gameScene.State = GameSceneState.Processing;
+                    return gameScene.Restart();
+                }
+            }
+
+            return UniTask.CompletedTask;
+        }
+
+        private async UniTask SimulateTerminateAsync(IGameScene gameScene, bool clearHistory = false)
+        {
+            var node = _gameScenes.FindLast(gameScene);
+            if (node != null)
+            {
+                await SimulateTerminateCore(node.Value);
+                if (clearHistory) _gameScenes.Remove(node);
+            }
+        }
+
+        private async UniTask SimulateTerminateLastAsync(bool clearHistory = false)
+        {
+            var currentNode = _gameScenes.Last;
+            if (currentNode != null)
+            {
+                var gameScene = currentNode.Value;
+                if (gameScene != null)
+                {
+                    await SimulateTerminateAsync(gameScene, clearHistory);
+                }
+            }
+        }
+
+        private async UniTask SimulateTerminateAllDialogAsync()
+        {
+            var scenesToTerminate = new List<IGameScene>();
+            foreach (var gameScene in _gameScenes)
+            {
+                if (gameScene is IGameSceneResult)
+                {
+                    scenesToTerminate.Add(gameScene);
+                }
+            }
+
+            foreach (var gameScene in scenesToTerminate)
+            {
+                await SimulateTerminateAsync(gameScene, clearHistory: true);
+            }
+        }
+
+        private async UniTask SimulateTerminateCore(IGameScene gameScene)
+        {
+            if (gameScene != null)
+            {
+                gameScene.State = GameSceneState.Terminate;
+                await gameScene.Terminate();
+            }
         }
 
         #endregion
@@ -1166,6 +1808,98 @@ namespace Game.Tests
         {
             public bool Confirmed { get; set; }
             public int SelectedQuantity { get; set; }
+        }
+
+        /// <summary>
+        /// テスト用ダイアログシーン
+        /// </summary>
+        private class TestDialogScene : IGameScene, IGameDialogSceneInitializer<MockSceneComponent, bool>, IGameSceneResult<bool>
+        {
+            public GameSceneState State { get; set; }
+            public Func<IGameScene, UniTask> ArgHandler { get; set; }
+            public Func<MockSceneComponent, IGameSceneResult<bool>, UniTask> DialogInitializer { get; set; }
+            public UniTaskCompletionSource<bool> ResultTcs { get; set; }
+
+            public MockSceneComponent SceneComponent { get; private set; }
+            public bool TerminateCalled { get; private set; }
+
+            public UniTask PreInitialize() => UniTask.CompletedTask;
+
+            public async UniTask LoadAsset()
+            {
+                SceneComponent = new MockSceneComponent();
+            }
+
+            public UniTask Startup()
+            {
+                if (DialogInitializer != null)
+                {
+                    return DialogInitializer.Invoke(SceneComponent, this);
+                }
+
+                return UniTask.CompletedTask;
+            }
+
+            public UniTask Ready() => UniTask.CompletedTask;
+            public UniTask Sleep() => UniTask.CompletedTask;
+            public UniTask Restart() => UniTask.CompletedTask;
+
+            public UniTask Terminate()
+            {
+                TerminateCalled = true;
+                TrySetCanceled();
+                return UniTask.CompletedTask;
+            }
+
+            public bool TrySetResult(bool result) => ResultTcs?.TrySetResult(result) ?? false;
+            public bool TrySetCanceled() => ResultTcs?.TrySetCanceled() ?? false;
+            public bool TrySetException(Exception e) => ResultTcs?.TrySetException(e) ?? false;
+        }
+
+        /// <summary>
+        /// テスト用ダイアログシーン2（異なる型のダイアログスタックテスト用）
+        /// </summary>
+        private class TestDialogScene2 : IGameScene, IGameDialogSceneInitializer<MockSceneComponent, int>, IGameSceneResult<int>
+        {
+            public GameSceneState State { get; set; }
+            public Func<IGameScene, UniTask> ArgHandler { get; set; }
+            public Func<MockSceneComponent, IGameSceneResult<int>, UniTask> DialogInitializer { get; set; }
+            public UniTaskCompletionSource<int> ResultTcs { get; set; }
+
+            public MockSceneComponent SceneComponent { get; private set; }
+            public bool TerminateCalled { get; private set; }
+
+            public UniTask PreInitialize() => UniTask.CompletedTask;
+
+            public async UniTask LoadAsset()
+            {
+                SceneComponent = new MockSceneComponent();
+            }
+
+            public UniTask Startup()
+            {
+                if (DialogInitializer != null)
+                {
+                    return DialogInitializer.Invoke(SceneComponent, this);
+                }
+
+                return UniTask.CompletedTask;
+            }
+
+            public UniTask Ready() => UniTask.CompletedTask;
+            public UniTask Sleep() => UniTask.CompletedTask;
+            public UniTask Restart() => UniTask.CompletedTask;
+
+            public UniTask Terminate()
+            {
+                TerminateCalled = true;
+                TrySetCanceled();
+                return UniTask.CompletedTask;
+            }
+
+            public bool TrySetResult(int result) => ResultTcs?.TrySetResult(result) ?? false;
+            public bool TrySetCanceled() => ResultTcs?.TrySetCanceled() ?? false;
+            public bool TrySetException(Exception e) => ResultTcs?.TrySetException(e) ?? false;
         }
 
         #endregion
