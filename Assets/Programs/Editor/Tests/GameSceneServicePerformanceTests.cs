@@ -104,7 +104,7 @@ namespace Game.Editor.Tests
             try
             {
                 // ログディレクトリの作成
-                string logDirectory = $"{Application.dataPath}/Tests/TestLogs";
+                string logDirectory = $"{Application.dataPath}/Programs/Editor/Tests/Logs";
                 if (!Directory.Exists(logDirectory))
                 {
                     Directory.CreateDirectory(logDirectory);
