@@ -207,7 +207,7 @@ namespace Game.Editor.Tests
             stateMachine.SetInitState<StateA>();
             stateMachine.Update();
 
-            Assert.That(stateMachine.Transition(TestEvent.ToStateB), Is.EqualTo(StateEventResult.Success));
+            Assert.That(stateMachine.Transition(TestEvent.ToStateB), Is.EqualTo(StateEventResult.Succeeded));
             stateMachine.Update();
 
             Assert.That(stateMachine.IsCurrentState<StateB>(), Is.True);
@@ -278,7 +278,7 @@ namespace Game.Editor.Tests
 
             var result = stateMachine.Transition(TestEvent.ToStateB);
 
-            Assert.That(result, Is.EqualTo(StateEventResult.Success));
+            Assert.That(result, Is.EqualTo(StateEventResult.Succeeded));
         }
 
         [Test]
@@ -654,15 +654,15 @@ namespace Game.Editor.Tests
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<StateA>(), Is.True);
 
-            Assert.That(stateMachine.Transition(TestEvent.ToStateB), Is.EqualTo(StateEventResult.Success));
+            Assert.That(stateMachine.Transition(TestEvent.ToStateB), Is.EqualTo(StateEventResult.Succeeded));
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<StateB>(), Is.True);
 
-            Assert.That(stateMachine.Transition(TestEvent.ToStateC), Is.EqualTo(StateEventResult.Success));
+            Assert.That(stateMachine.Transition(TestEvent.ToStateC), Is.EqualTo(StateEventResult.Succeeded));
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<StateC>(), Is.True);
 
-            Assert.That(stateMachine.Transition(TestEvent.ToStateA), Is.EqualTo(StateEventResult.Success));
+            Assert.That(stateMachine.Transition(TestEvent.ToStateA), Is.EqualTo(StateEventResult.Succeeded));
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<StateA>(), Is.True);
 
@@ -716,7 +716,7 @@ namespace Game.Editor.Tests
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<IntStateA>(), Is.True);
 
-            Assert.That(stateMachine.Transition(1), Is.EqualTo(StateEventResult.Success));
+            Assert.That(stateMachine.Transition(1), Is.EqualTo(StateEventResult.Succeeded));
             stateMachine.Update();
             Assert.That(stateMachine.IsCurrentState<IntStateB>(), Is.True);
         }

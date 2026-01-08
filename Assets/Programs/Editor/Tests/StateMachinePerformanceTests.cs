@@ -930,7 +930,7 @@ namespace Game.Editor.Tests
                 if (i % 10 == 0)
                 {
                     var result = simpleStateMachine.Transition(SimpleEvent.Next);
-                    if (result == StateEventResult.Success)
+                    if (result == StateEventResult.Succeeded)
                     {
                         simpleStateMachine.Update();
                     }
@@ -1208,7 +1208,7 @@ namespace Game.Editor.Tests
 
                 switch (result)
                 {
-                    case StateEventResult.Success:
+                    case StateEventResult.Succeeded:
                         context.TransitionCounter.RecordTransitionResult(true, elapsedMs);
                         successByEvent[evt]++;
                         stateMachine.Update();
@@ -1379,9 +1379,9 @@ namespace Game.Editor.Tests
             // Idle -> Combat -> Victory -> Idle のサイクルを繰り返す
             var transitionPatterns = new[]
             {
-                GameStateEvent.EnterCombat,  // Idle -> Combat
-                GameStateEvent.Victory,       // Combat -> Victory
-                GameStateEvent.Complete       // Victory -> Idle
+                GameStateEvent.EnterCombat, // Idle -> Combat
+                GameStateEvent.Victory,     // Combat -> Victory
+                GameStateEvent.Complete     // Victory -> Idle
             };
 
             Log("=== 成功遷移の詳細分析 ===");
@@ -1416,7 +1416,7 @@ namespace Game.Editor.Tests
 
                     switch (result)
                     {
-                        case StateEventResult.Success:
+                        case StateEventResult.Succeeded:
                             context.TransitionCounter.RecordTransitionResult(true, elapsedMs);
                             successByEvent[evt]++;
                             timesByEvent[evt].Add(elapsedMs);
@@ -1431,6 +1431,7 @@ namespace Game.Editor.Tests
                             {
                                 stateMachine.Update();
                             }
+
                             break;
 
                         case StateEventResult.Failed:
@@ -1491,6 +1492,7 @@ namespace Game.Editor.Tests
                         sum += t;
                         if (t > maxTime) maxTime = t;
                     }
+
                     avgTime = sum / timesByEvent[evt].Count;
                 }
 
@@ -1566,7 +1568,7 @@ namespace Game.Editor.Tests
 
             switch (result)
             {
-                case StateEventResult.Success:
+                case StateEventResult.Succeeded:
                     stateMachine.Update();
                     return 1;
 
@@ -1617,7 +1619,7 @@ namespace Game.Editor.Tests
 
             switch (result)
             {
-                case StateEventResult.Success:
+                case StateEventResult.Succeeded:
                     counter.RecordTransitionResult(true, elapsedMs);
                     stateMachine.Update();
                     return 1;
@@ -1653,7 +1655,7 @@ namespace Game.Editor.Tests
             foreach (var evt in recoveryEvents)
             {
                 var result = stateMachine.Transition(evt);
-                if (result == StateEventResult.Success)
+                if (result == StateEventResult.Succeeded)
                 {
                     stateMachine.Update();
                     if (stateMachine.IsCurrentState<IdleState>())
@@ -1700,7 +1702,7 @@ namespace Game.Editor.Tests
 
                 switch (result)
                 {
-                    case StateEventResult.Success:
+                    case StateEventResult.Succeeded:
                         stateMachine.Update();
                         transitions++;
                         break;

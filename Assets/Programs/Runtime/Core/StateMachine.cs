@@ -62,9 +62,9 @@ namespace Game.Core
 
     public enum StateEventResult
     {
-        Waiting, // 遷移リクエストしたが順番待ち、次回Updateで再度リクエスト
-        Success, // 遷移リクエストが受付られ、次回Updateで処理される
-        Failed,  // 遷移テーブルにないリクエスト
+        Waiting,   // 遷移リクエストしたが順番待ち、次回Updateで再度リクエスト
+        Succeeded, // 遷移リクエストが受付られ、次回Updateで処理される
+        Failed     // 遷移テーブルにないリクエスト
     }
 
     /// <summary>
@@ -222,7 +222,7 @@ namespace Game.Core
                 return StateEventResult.Failed;
             }
 
-            return StateEventResult.Success;
+            return StateEventResult.Succeeded;
         }
 
         /// <summary>
