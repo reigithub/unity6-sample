@@ -6,13 +6,13 @@ using UnityEngine;
 
 namespace Game.Core.Services
 {
-    public class MessageBrokerService : GameService
+    public class MessageBrokerService : IGameService
     {
         // BuiltinContainerBuilder.BuildServiceProviderした後に、Subscribeし始める必要があるため
         // AddMessageBroker～BuildServiceProviderを1ヶ所に集約してみる
         public GlobalMessageBroker GlobalMessageBroker { get; private set; } = new();
 
-        public override void Startup()
+        public void Startup()
         {
             // 使うやつは予めココに全て記述する…
             GlobalMessageBroker.AddMessageBroker<int, int>();
@@ -37,7 +37,7 @@ namespace Game.Core.Services
             GlobalMessageBroker.Build();
         }
 
-        public override void Shutdown()
+        public void Shutdown()
         {
             RemoveAll();
             GlobalMessageBroker = null;

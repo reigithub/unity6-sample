@@ -8,7 +8,7 @@ namespace Game.Core.Services
         private static readonly Lazy<GameServiceManager> InstanceLazy = new(() => new GameServiceManager());
         public static GameServiceManager Instance => InstanceLazy.Value;
 
-        private readonly Dictionary<Type, GameService> _gameServices = new();
+        private readonly Dictionary<Type, IGameService> _gameServices = new();
 
         private GameServiceManager()
         {
@@ -25,9 +25,8 @@ namespace Game.Core.Services
         }
 
         private bool TryGetOrAddService<T>(out T service)
-            where T : GameService, new()
+            where T : IGameService, new()
         {
-            service = null;
             var type = typeof(T);
             if (_gameServices.TryGetValue(type, out var cache))
             {
@@ -42,20 +41,20 @@ namespace Game.Core.Services
         }
 
         public T GetService<T>()
-            where T : GameService, new()
+            where T : IGameService, new()
         {
             TryGetOrAddService<T>(out var service);
             return service;
         }
 
         public void StartupService<T>()
-            where T : GameService, new()
+            where T : IGameService, new()
         {
             TryGetOrAddService<T>(out _);
         }
 
         public void ShutdownService<T>()
-            where T : GameService
+            where T : IGameService
         {
             var type = typeof(T);
             if (_gameServices.TryGetValue(type, out var service))

@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace Game.Core.Services
 {
-    public class AddressableAssetService : GameService
+    public class AddressableAssetService : IGameService
     {
         public async Task<T> LoadAssetAsync<T>(string address) where T : UnityEngine.Object
         {

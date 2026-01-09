@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Game.Contents.Scenes;
 using Game.Core.Constants;
@@ -15,7 +14,7 @@ namespace Game.Core.Services
     /// <summary>
     /// GameSceneの遷移挙動を制御するサービス
     /// </summary>
-    public partial class GameSceneService : GameService
+    public partial class GameSceneService : IGameService
     {
         private GameServiceReference<AddressableAssetService> _assetService;
         private AddressableAssetService AssetService => _assetService.Reference;
@@ -23,7 +22,7 @@ namespace Game.Core.Services
         private GameServiceReference<MessageBrokerService> _messageBrokerService;
         private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
 
-        private readonly LinkedList<IGameScene> _gameScenes = new();
+        private readonly List<IGameScene> _gameScenes = new(16);
 
         private const GameSceneOperations DefaultOperations = GameSceneConstants.DefaultOperations;
 
@@ -33,7 +32,7 @@ namespace Game.Core.Services
             await CurrentSceneOperationAsync(operations);
 
             var gameScene = new TScene();
-            _gameScenes.AddLast(gameScene);
+            _gameScenes.Add(gameScene);
             await TransitionCore(gameScene);
         }
 
@@ -45,7 +44,7 @@ namespace Game.Core.Services
 
             var gameScene = new TScene();
             CreateArgHandler(gameScene, arg);
-            _gameScenes.AddLast(gameScene);
+            _gameScenes.Add(gameScene);
             await TransitionCore(gameScene);
         }
 
@@ -57,9 +56,9 @@ namespace Game.Core.Services
 
             var gameScene = new TScene();
             var tcs = CreateResultTcs<TResult>(gameScene);
-            _gameScenes.AddLast(gameScene);
+            _gameScenes.Add(gameScene);
             await TransitionCore(gameScene);
-            return await ResultCore(gameScene, tcs);
+            return await ResultAsync(gameScene, tcs);
         }
 
         // 引数とリザルトつきの画面遷移
@@ -71,33 +70,32 @@ namespace Game.Core.Services
             var gameScene = new TScene();
             CreateArgHandler(gameScene, arg);
             var tcs = CreateResultTcs<TResult>(gameScene);
-            _gameScenes.AddLast(gameScene);
+            _gameScenes.Add(gameScene);
             await TransitionCore(gameScene);
-            return await ResultCore(gameScene, tcs);
+            return await ResultAsync(gameScene, tcs);
         }
 
         // 現在のシーンから見て、前のシーンへ戻る
         public async UniTask TransitionPrevAsync()
         {
-            var prevNode = _gameScenes.Last.Previous;
-            if (prevNode != null)
+            if (_gameScenes.Count >= 2)
             {
-                var gameScene = prevNode.Value;
-                if (gameScene.State is GameSceneState.Terminate)
+                var prevScene = _gameScenes[^2];
+                if (prevScene.State is GameSceneState.Terminate)
                 {
                     // 現在のシーンを閉じて履歴を消す
                     await TerminateLastAsync(clearHistory: true);
                     // 履歴から遷移する
-                    await TransitionCore(gameScene);
+                    await TransitionCore(prevScene);
                 }
-                else if (gameScene.State is GameSceneState.Sleep)
+                else if (prevScene.State is GameSceneState.Sleep)
                 {
                     // 現在のシーンを閉じて履歴を消す
                     await TerminateLastAsync(clearHistory: true);
                     // スリープ復帰
                     await RestartAsync();
                 }
-                else if (gameScene.State is GameSceneState.Processing)
+                else if (prevScene.State is GameSceneState.Processing)
                 {
                     await TerminateLastAsync(clearHistory: true);
                 }
@@ -127,9 +125,9 @@ namespace Game.Core.Services
             var gameScene = new TScene();
             gameScene.DialogInitializer = initializer;
             var tcs = CreateResultTcs<TResult>(gameScene);
-            _gameScenes.AddLast(gameScene);
+            _gameScenes.Add(gameScene);
             await TransitionCore(gameScene, isDialog: true);
-            return await ResultCore(gameScene, tcs);
+            return await ResultAsync(gameScene, tcs);
         }
 
         // 主に遷移前に現在のシーンに対して何かする
@@ -195,7 +193,7 @@ namespace Game.Core.Services
             await gameScene.Ready();
         }
 
-        private async UniTask<TResult> ResultCore<TResult>(IGameScene gameScene, UniTaskCompletionSource<TResult> tcs)
+        private async UniTask<TResult> ResultAsync<TResult>(IGameScene gameScene, UniTaskCompletionSource<TResult> tcs)
         {
             if (tcs == null) return default;
 
@@ -216,101 +214,87 @@ namespace Game.Core.Services
 
         public bool IsProcessing(Type type)
         {
-            var currentNode = _gameScenes.Last;
-            if (currentNode != null)
-            {
-                var gameScene = currentNode.Value;
-                return gameScene.GetType() == type && gameScene.State is GameSceneState.Processing;
-            }
+            if (_gameScenes.Count == 0) return false;
 
-            return false;
+            var gameScene = _gameScenes[^1];
+            return gameScene.GetType() == type && gameScene.State is GameSceneState.Processing;
         }
 
         private UniTask SleepAsync()
         {
-            var currentNode = _gameScenes.Last;
-            if (currentNode != null)
-            {
-                var gameScene = currentNode.Value;
-                if (gameScene != null)
-                {
-                    gameScene.State = GameSceneState.Sleep;
-                    return gameScene.Sleep();
-                }
-            }
+            if (_gameScenes.Count == 0) return UniTask.CompletedTask;
 
-            return UniTask.CompletedTask;
+            var gameScene = _gameScenes[^1];
+            gameScene.State = GameSceneState.Sleep;
+            return gameScene.Sleep();
         }
 
         private UniTask RestartAsync()
         {
-            var currentNode = _gameScenes.Last;
-            if (currentNode != null)
-            {
-                var gameScene = currentNode.Value;
-                if (gameScene != null)
-                {
-                    gameScene.State = GameSceneState.Processing;
-                    return gameScene.Restart();
-                }
-            }
+            if (_gameScenes.Count == 0) return UniTask.CompletedTask;
 
-            return UniTask.CompletedTask;
+            var gameScene = _gameScenes[^1];
+            gameScene.State = GameSceneState.Processing;
+            return gameScene.Restart();
         }
 
         private async UniTask TerminateAsync(IGameScene gameScene, bool clearHistory = false)
         {
-            var node = _gameScenes.FindLast(gameScene);
-            if (node != null)
+            var index = _gameScenes.LastIndexOf(gameScene);
+            if (index >= 0)
             {
-                await TerminateCore(node.Value);
+                await TerminateCore(gameScene);
 
-                if (clearHistory) _gameScenes.Remove(node);
+                if (clearHistory) _gameScenes.RemoveAt(index);
             }
         }
 
         public async UniTask TerminateAsync(Type type, bool clearHistory = false)
         {
-            var gameScene = _gameScenes.LastOrDefault(x => x.GetType() == type);
-            if (gameScene != null)
+            var index = FindLastIndexByType(type);
+            if (index >= 0)
             {
+                var gameScene = _gameScenes[index];
                 await TerminateCore(gameScene);
 
-                if (clearHistory) _gameScenes.Remove(gameScene);
+                if (clearHistory) _gameScenes.RemoveAt(index);
             }
         }
 
         // 最後に開いたものを閉じる
         public async UniTask TerminateLastAsync(bool clearHistory = false)
         {
-            var currentNode = _gameScenes.Last;
-            if (currentNode != null)
-            {
-                var gameScene = currentNode.Value;
-                if (gameScene != null)
-                {
-                    await TerminateAsync(gameScene, clearHistory);
-                }
-            }
+            if (_gameScenes.Count == 0) return;
+
+            var lastIndex = _gameScenes.Count - 1;
+            var gameScene = _gameScenes[lastIndex];
+
+            await TerminateCore(gameScene);
+
+            if (clearHistory) _gameScenes.RemoveAt(lastIndex);
         }
 
         private async UniTask TerminateAllDialogAsync()
         {
-            foreach (var gameScene in _gameScenes.Reverse())
+            // 逆順で走査（削除時にインデックスがずれないように）
+            for (int i = _gameScenes.Count - 1; i >= 0; i--)
             {
+                var gameScene = _gameScenes[i];
                 // リザルト持ちのシーンもダイアログとする
                 if (gameScene is IGameSceneResult)
                 {
-                    await TerminateAsync(gameScene, clearHistory: true);
+                    await TerminateCore(gameScene);
+                    _gameScenes.RemoveAt(i);
                 }
             }
         }
 
         private async UniTask TerminateAllAsync()
         {
-            foreach (var gameScene in _gameScenes.Reverse())
+            // 逆順で終了処理
+            for (int i = _gameScenes.Count - 1; i >= 0; i--)
             {
-                await TerminateCore(gameScene);
+                await TerminateCore(_gameScenes[i]);
             }
 
             _gameScenes.Clear();
@@ -323,6 +307,20 @@ namespace Game.Core.Services
                 gameScene.State = GameSceneState.Terminate;
                 await gameScene.Terminate();
             }
+        }
+
+        /// <summary>
+        /// 指定した型のシーンを末尾から検索してインデックスを返す
+        /// </summary>
+        private int FindLastIndexByType(Type type)
+        {
+            for (int i = _gameScenes.Count - 1; i >= 0; i--)
+            {
+                if (_gameScenes[i].GetType() == type)
+                    return i;
+            }
+
+            return -1;
         }
 
         #region UnityScene
@@ -343,9 +341,7 @@ namespace Game.Core.Services
         public async UniTask UnloadUnitySceneAsync(SceneInstance sceneInstance)
         {
             await AssetService.UnloadSceneAsync(sceneInstance);
-
-            if (_unityScenes.Contains(sceneInstance))
-                _unityScenes.Remove(sceneInstance);
+            _unityScenes.Remove(sceneInstance);
         }
 
         public async UniTask UnloadUnitySceneAllAsync()

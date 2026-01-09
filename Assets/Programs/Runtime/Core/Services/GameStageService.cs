@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Game.Core.Services
 {
-    public class GameStageService : GameService
+    public class GameStageService : IGameService
     {
         private GameObject _gameStageService;
         private readonly Dictionary<int, GameStageResultData> _gameStageResults = new();
@@ -24,10 +24,9 @@ namespace Game.Core.Services
             };
         }
 
-        public override void Shutdown()
+        public void Shutdown()
         {
             _gameStageResults.Clear();
-            base.Shutdown();
         }
     }
 

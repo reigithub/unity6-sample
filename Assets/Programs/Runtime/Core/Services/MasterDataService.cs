@@ -7,14 +7,14 @@ using UnityEngine;
 
 namespace Game.Core.Services
 {
-    public class MasterDataService : GameService
+    public class MasterDataService : IGameService
     {
         private GameServiceReference<AddressableAssetService> _assetService;
         private AddressableAssetService AssetService => _assetService.Reference;
 
         public MemoryDatabase MemoryDatabase { get; private set; }
 
-        public override void Startup()
+        public void Startup()
         {
             var formatterResolvers = MasterDataHelper.GetMessagePackFormatterResolvers();
             StaticCompositeResolver.Instance.Register(formatterResolvers);
