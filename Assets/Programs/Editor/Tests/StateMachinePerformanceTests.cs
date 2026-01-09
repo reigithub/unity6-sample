@@ -273,6 +273,22 @@ namespace Game.Editor.Tests
                 return (double)FailureCount / total * 100.0;
             }
 
+            /// <summary>
+            /// 指定したパーセンタイルの遷移時間を取得（0.0-1.0）
+            /// </summary>
+            public double GetPercentileTransitionTimeMs(double percentile)
+            {
+                if (TransitionTimesMs.Count == 0) return 0;
+
+                // ソート済みリストを作成（元のリストを変更しない）
+                var sortedTimes = new List<double>(TransitionTimesMs);
+                sortedTimes.Sort();
+
+                int index = (int)(sortedTimes.Count * percentile);
+                index = Math.Min(index, sortedTimes.Count - 1);
+                return sortedTimes[index];
+            }
+
             public void RecordEnter(string stateName)
             {
                 EnterCount++;
@@ -1809,6 +1825,884 @@ namespace Game.Editor.Tests
             stateMachine.AddTransition<SimpleStateB, SimpleStateA>(SimpleEvent.Next);
             stateMachine.SetInitState<SimpleStateA>();
             return stateMachine;
+        }
+
+        #endregion
+
+        #region Old StateMachine States for Comparison
+
+        private abstract class OldGameStateBase : OldState<ComplexGameContext, GameStateEvent>
+        {
+            protected string StateName => GetType().Name;
+
+            public override void Enter()
+            {
+                Context.TransitionCounter.RecordEnter(StateName);
+                Context.Statistics.RecordStateVisit(StateName);
+            }
+
+            public override void Update()
+            {
+                Context.TransitionCounter.RecordUpdate(StateName);
+                Context.Statistics.TotalUpdates++;
+            }
+
+            public override void Exit()
+            {
+                Context.TransitionCounter.RecordExit(StateName);
+            }
+
+            protected void PerformComplexCalculation()
+            {
+                // 複雑な計算をシミュレート（新StateMachineと同じ処理）
+                var player = Context.Player;
+                var stats = player.Stats;
+
+                float totalStat = 0;
+                foreach (var stat in stats.Values)
+                {
+                    totalStat += stat;
+                }
+
+                var power = totalStat * player.Level * 0.1f;
+                var defense = stats["Vitality"] * 2 + player.Level;
+
+                // 位置更新
+                var direction = new Vector3(
+                    (float)(Context.Random.NextDouble() - 0.5) * 2,
+                    0,
+                    (float)(Context.Random.NextDouble() - 0.5) * 2
+                ).normalized;
+
+                player.Position += direction * 0.1f;
+            }
+        }
+
+        private class OldIdleState : OldGameStateBase
+        {
+            public override void Update()
+            {
+                base.Update();
+                PerformComplexCalculation();
+
+                // アイドル中はマナ回復
+                Context.Player.Mana = Mathf.Min(Context.Player.MaxMana, Context.Player.Mana + 0.1f);
+            }
+        }
+
+        private class OldCombatState : OldGameStateBase
+        {
+            private int _combatTurns;
+
+            public override void Enter()
+            {
+                base.Enter();
+                _combatTurns = 0;
+            }
+
+            public override void Update()
+            {
+                base.Update();
+                PerformComplexCalculation();
+
+                _combatTurns++;
+
+                // 戦闘シミュレーション
+                var damage = Context.Random.Next(5, 20);
+                Context.Player.TakeDamage(damage);
+                Context.Statistics.TotalDamageTaken += damage;
+
+                var dealDamage = Context.Random.Next(10, 30);
+                Context.Statistics.TotalDamageDealt += dealDamage;
+
+                // バフ処理
+                if (_combatTurns % 5 == 0 && Context.Player.ActiveBuffs.Count < 5)
+                {
+                    Context.Player.ActiveBuffs.Add($"CombatBuff_{_combatTurns}");
+                }
+            }
+
+            public override void Exit()
+            {
+                base.Exit();
+                Context.Player.ActiveBuffs.RemoveAll(b => b.StartsWith("CombatBuff"));
+            }
+        }
+
+        private class OldVictoryState : OldGameStateBase
+        {
+            public override void Enter()
+            {
+                base.Enter();
+                Context.Statistics.EnemiesDefeated++;
+                Context.Player.GainExperience(50);
+                Context.Player.Gold += Context.Random.Next(10, 100);
+
+                // 戦利品追加
+                var item = new Item
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = $"Loot_{Context.Statistics.ItemsCollected}",
+                    Weight = (float)Context.Random.NextDouble() * 5,
+                    Value = Context.Random.Next(1, 50),
+                    Type = (ItemType)Context.Random.Next(0, 5)
+                };
+
+                if (Context.Inventory.AddItem(item))
+                {
+                    Context.Statistics.ItemsCollected++;
+                }
+            }
+
+            public override void Update()
+            {
+                base.Update();
+                PerformComplexCalculation();
+            }
+        }
+
+        private class OldDefeatState : OldGameStateBase
+        {
+            public override void Enter()
+            {
+                base.Enter();
+                Context.Player.Health = Context.Player.MaxHealth * 0.5f;
+                Context.Player.Gold = (int)(Context.Player.Gold * 0.9f);
+            }
+
+            public override void Update()
+            {
+                base.Update();
+            }
+        }
+
+        private class OldInventoryState : OldGameStateBase
+        {
+            public override void Update()
+            {
+                base.Update();
+
+                // インベントリ操作シミュレーション
+                var items = Context.Inventory.Items;
+                if (items.Count > 0)
+                {
+                    // 重量計算
+                    float totalWeight = 0;
+                    int totalValue = 0;
+                    foreach (var item in items)
+                    {
+                        totalWeight += item.Weight;
+                        totalValue += item.Value;
+                    }
+                }
+            }
+        }
+
+        private class OldMenuState : OldGameStateBase
+        {
+            public override void Update()
+            {
+                base.Update();
+                // メニュー操作シミュレーション
+            }
+        }
+
+        private class OldRestState : OldGameStateBase
+        {
+            public override void Update()
+            {
+                base.Update();
+
+                // 休憩中は回復
+                var healing = 5f;
+                Context.Player.Heal(healing);
+                Context.Statistics.TotalHealing += (int)healing;
+                Context.Player.Mana = Mathf.Min(Context.Player.MaxMana, Context.Player.Mana + 2f);
+            }
+        }
+
+        private class OldTravelState : OldGameStateBase
+        {
+            public override void Update()
+            {
+                base.Update();
+                PerformComplexCalculation();
+
+                // 移動中のイベント発生
+                if (Context.Random.NextDouble() < 0.1)
+                {
+                    Context.EventQueue.Enqueue(new GameEvent
+                    {
+                        Type = "RandomEncounter",
+                        Timestamp = DateTime.Now
+                    });
+                }
+            }
+        }
+
+        private class OldEventState : OldGameStateBase
+        {
+            public override void Update()
+            {
+                base.Update();
+
+                // イベント処理
+                while (Context.EventQueue.Count > 0)
+                {
+                    var evt = Context.EventQueue.Dequeue();
+                    ProcessEvent(evt);
+                }
+            }
+
+            private void ProcessEvent(GameEvent evt)
+            {
+                switch (evt.Type)
+                {
+                    case "RandomEncounter":
+                        Context.Player.TakeDamage(10);
+                        Context.Statistics.TotalDamageTaken += 10;
+                        break;
+                }
+            }
+        }
+
+        private OldStateMachine<ComplexGameContext, GameStateEvent> CreateOldGameStateMachine(ComplexGameContext context)
+        {
+            var stateMachine = new OldStateMachine<ComplexGameContext, GameStateEvent>(context);
+
+            // 遷移ルール設定（新StateMachineと同じ構成）
+            stateMachine.AddTransition<OldIdleState, OldCombatState>(GameStateEvent.EnterCombat);
+            stateMachine.AddTransition<OldIdleState, OldInventoryState>(GameStateEvent.OpenInventory);
+            stateMachine.AddTransition<OldIdleState, OldMenuState>(GameStateEvent.OpenMenu);
+            stateMachine.AddTransition<OldIdleState, OldRestState>(GameStateEvent.Rest);
+            stateMachine.AddTransition<OldIdleState, OldTravelState>(GameStateEvent.Travel);
+
+            stateMachine.AddTransition<OldCombatState, OldVictoryState>(GameStateEvent.Victory);
+            stateMachine.AddTransition<OldCombatState, OldDefeatState>(GameStateEvent.Defeat);
+            stateMachine.AddTransition<OldCombatState, OldIdleState>(GameStateEvent.ExitCombat);
+
+            stateMachine.AddTransition<OldVictoryState, OldIdleState>(GameStateEvent.Complete);
+            stateMachine.AddTransition<OldDefeatState, OldIdleState>(GameStateEvent.Complete);
+
+            stateMachine.AddTransition<OldInventoryState, OldIdleState>(GameStateEvent.CloseInventory);
+            stateMachine.AddTransition<OldMenuState, OldIdleState>(GameStateEvent.CloseMenu);
+            stateMachine.AddTransition<OldRestState, OldIdleState>(GameStateEvent.Complete);
+
+            stateMachine.AddTransition<OldTravelState, OldIdleState>(GameStateEvent.Complete);
+            stateMachine.AddTransition<OldTravelState, OldCombatState>(GameStateEvent.EnterCombat);
+            stateMachine.AddTransition<OldTravelState, OldEventState>(GameStateEvent.TriggerEvent);
+
+            stateMachine.AddTransition<OldEventState, OldIdleState>(GameStateEvent.Complete);
+            stateMachine.AddTransition<OldEventState, OldCombatState>(GameStateEvent.EnterCombat);
+
+            stateMachine.SetInitState<OldIdleState>();
+
+            return stateMachine;
+        }
+
+        #endregion
+
+        #region Old vs New StateMachine Comparison Tests
+
+        [Test]
+        public void Comparison_OldVsNew_TransitionTiming()
+        {
+            const int iterations = 50000;
+            var transitionStopwatch = new Stopwatch();
+
+            Log("=== 旧StateMachine vs 新StateMachine 遷移時間比較 ===");
+            Log($"イテレーション数: {iterations:N0}");
+            Log("");
+
+            // ===== 旧StateMachineを先に計測（JIT/GC影響を均等化） =====
+            var oldContext = new ComplexGameContext(seed: 12345);
+            var oldStateMachine = CreateOldGameStateMachine(oldContext);
+            oldStateMachine.Update();
+
+            // ウォームアップ
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                ExecuteOldTransitionCycleWithTiming(oldStateMachine, oldContext, transitionStopwatch);
+            }
+
+            oldContext.Reset();
+            oldContext.TransitionCounter.Reset();
+            oldStateMachine.Update();
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            var oldStopwatch = new Stopwatch();
+            long oldStartMemory = GC.GetTotalMemory(true);
+            int oldStartGcCount = GC.CollectionCount(0);
+
+            oldStopwatch.Start();
+            for (int i = 0; i < iterations; i++)
+            {
+                ExecuteOldTransitionCycleWithTiming(oldStateMachine, oldContext, transitionStopwatch);
+            }
+            oldStopwatch.Stop();
+
+            long oldEndMemory = GC.GetTotalMemory(false);
+            int oldEndGcCount = GC.CollectionCount(0);
+
+            double oldTotalMs = oldStopwatch.Elapsed.TotalMilliseconds;
+            double oldAvgTransitionTimeMs = oldContext.TransitionCounter.GetAverageTransitionTimeMs();
+            double oldMaxTransitionTimeMs = oldContext.TransitionCounter.MaxTransitionTimeMs;
+            int oldSuccessCount = oldContext.TransitionCounter.SuccessCount;
+            long oldMemoryAllocated = oldEndMemory - oldStartMemory;
+            int oldGcCount = oldEndGcCount - oldStartGcCount;
+
+            // ===== 新StateMachineの計測 =====
+            var newContext = new ComplexGameContext(seed: 12345);
+            var newStateMachine = CreateGameStateMachine(newContext);
+            newStateMachine.Update();
+
+            // ウォームアップ
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                ExecuteTransitionCycleWithTiming(newStateMachine, newContext, transitionStopwatch);
+            }
+
+            newContext.Reset();
+            newContext.TransitionCounter.Reset();
+            newStateMachine.Update();
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            var newStopwatch = new Stopwatch();
+            long newStartMemory = GC.GetTotalMemory(true);
+            int newStartGcCount = GC.CollectionCount(0);
+
+            newStopwatch.Start();
+            for (int i = 0; i < iterations; i++)
+            {
+                ExecuteTransitionCycleWithTiming(newStateMachine, newContext, transitionStopwatch);
+            }
+            newStopwatch.Stop();
+
+            long newEndMemory = GC.GetTotalMemory(false);
+            int newEndGcCount = GC.CollectionCount(0);
+
+            double newTotalMs = newStopwatch.Elapsed.TotalMilliseconds;
+            double newAvgTransitionTimeMs = newContext.TransitionCounter.GetAverageTransitionTimeMs();
+            double newMaxTransitionTimeMs = newContext.TransitionCounter.MaxTransitionTimeMs;
+            int newSuccessCount = newContext.TransitionCounter.SuccessCount;
+            long newMemoryAllocated = newEndMemory - newStartMemory;
+            int newGcCount = newEndGcCount - newStartGcCount;
+
+            // 結果出力
+            Log("[旧StateMachine]");
+            Log($"  総実行時間: {oldTotalMs:F3} ms");
+            Log($"  平均遷移時間: {oldAvgTransitionTimeMs * 1000:F3} μs");
+            Log($"  最大遷移時間: {oldMaxTransitionTimeMs * 1000:F3} μs");
+            Log($"  遷移スループット: {oldSuccessCount / (oldTotalMs / 1000.0):N0} transitions/sec");
+            Log($"  メモリアロケーション: {oldMemoryAllocated:N0} bytes");
+            Log($"  GC発生回数: {oldGcCount}");
+            Log("");
+            Log("[新StateMachine]");
+            Log($"  総実行時間: {newTotalMs:F3} ms");
+            Log($"  平均遷移時間: {newAvgTransitionTimeMs * 1000:F3} μs");
+            Log($"  最大遷移時間: {newMaxTransitionTimeMs * 1000:F3} μs");
+            Log($"  遷移スループット: {newSuccessCount / (newTotalMs / 1000.0):N0} transitions/sec");
+            Log($"  メモリアロケーション: {newMemoryAllocated:N0} bytes");
+            Log($"  GC発生回数: {newGcCount}");
+            Log("");
+            Log("[改善率]");
+            Log($"  実行時間: {(oldTotalMs / newTotalMs):F2}x 高速化");
+            Log($"  平均遷移時間: {(oldAvgTransitionTimeMs / newAvgTransitionTimeMs):F2}x 高速化");
+            Log($"  スループット: {((newSuccessCount / (newTotalMs / 1000.0)) / (oldSuccessCount / (oldTotalMs / 1000.0))):F2}x 向上");
+            if (oldMemoryAllocated > 0 && newMemoryAllocated > 0)
+            {
+                Log($"  メモリ使用量: {((double)oldMemoryAllocated / newMemoryAllocated):F2}x 削減");
+            }
+            else
+            {
+                Log($"  メモリ使用量: 旧={oldMemoryAllocated:N0} bytes, 新={newMemoryAllocated:N0} bytes");
+            }
+
+            Assert.Pass($"新StateMachineは旧StateMachineより {(oldTotalMs / newTotalMs):F2}x 高速");
+        }
+
+        [Test]
+        public void Comparison_OldVsNew_UpdateThroughput()
+        {
+            const int iterations = 100000;
+
+            Log("=== 旧StateMachine vs 新StateMachine Update スループット比較 ===");
+            Log($"イテレーション数: {iterations:N0}");
+            Log("");
+
+            // ===== 旧StateMachineを先に計測（JIT/GC影響を均等化） =====
+            var oldContext = new ComplexGameContext(seed: 12345);
+            var oldStateMachine = CreateOldGameStateMachine(oldContext);
+
+            // ウォームアップ
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                oldStateMachine.Update();
+            }
+
+            oldContext.Reset();
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            var oldStopwatch = new Stopwatch();
+            long oldStartMemory = GC.GetTotalMemory(true);
+            int oldStartGcCount = GC.CollectionCount(0);
+
+            oldStopwatch.Start();
+            for (int i = 0; i < iterations; i++)
+            {
+                oldStateMachine.Update();
+            }
+            oldStopwatch.Stop();
+
+            long oldEndMemory = GC.GetTotalMemory(false);
+            int oldEndGcCount = GC.CollectionCount(0);
+
+            double oldTotalMs = oldStopwatch.Elapsed.TotalMilliseconds;
+            double oldOpsPerSec = iterations / (oldTotalMs / 1000.0);
+            long oldMemoryAllocated = oldEndMemory - oldStartMemory;
+            int oldGcCount = oldEndGcCount - oldStartGcCount;
+
+            // ===== 新StateMachineの計測 =====
+            var newContext = new ComplexGameContext(seed: 12345);
+            var newStateMachine = CreateGameStateMachine(newContext);
+
+            // ウォームアップ
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                newStateMachine.Update();
+            }
+
+            newContext.Reset();
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            var newStopwatch = new Stopwatch();
+            long newStartMemory = GC.GetTotalMemory(true);
+            int newStartGcCount = GC.CollectionCount(0);
+
+            newStopwatch.Start();
+            for (int i = 0; i < iterations; i++)
+            {
+                newStateMachine.Update();
+            }
+            newStopwatch.Stop();
+
+            long newEndMemory = GC.GetTotalMemory(false);
+            int newEndGcCount = GC.CollectionCount(0);
+
+            double newTotalMs = newStopwatch.Elapsed.TotalMilliseconds;
+            double newOpsPerSec = iterations / (newTotalMs / 1000.0);
+            long newMemoryAllocated = newEndMemory - newStartMemory;
+            int newGcCount = newEndGcCount - newStartGcCount;
+
+            // 結果出力
+            Log("[旧StateMachine]");
+            Log($"  総実行時間: {oldTotalMs:F3} ms");
+            Log($"  平均時間/Update: {oldTotalMs / iterations:F6} ms");
+            Log($"  スループット: {oldOpsPerSec:N0} ops/sec");
+            Log($"  メモリアロケーション: {oldMemoryAllocated:N0} bytes");
+            Log($"  GC発生回数: {oldGcCount}");
+            Log("");
+            Log("[新StateMachine]");
+            Log($"  総実行時間: {newTotalMs:F3} ms");
+            Log($"  平均時間/Update: {newTotalMs / iterations:F6} ms");
+            Log($"  スループット: {newOpsPerSec:N0} ops/sec");
+            Log($"  メモリアロケーション: {newMemoryAllocated:N0} bytes");
+            Log($"  GC発生回数: {newGcCount}");
+            Log("");
+            Log("[改善率]");
+            Log($"  実行時間: {(oldTotalMs / newTotalMs):F2}x 高速化");
+            Log($"  スループット: {(newOpsPerSec / oldOpsPerSec):F2}x 向上");
+            if (oldMemoryAllocated > 0 && newMemoryAllocated > 0)
+            {
+                Log($"  メモリ使用量: {((double)oldMemoryAllocated / newMemoryAllocated):F2}x 削減");
+            }
+            else
+            {
+                Log($"  メモリ使用量: 旧={oldMemoryAllocated:N0} bytes, 新={newMemoryAllocated:N0} bytes");
+            }
+
+            Assert.That(newOpsPerSec, Is.GreaterThanOrEqualTo(oldOpsPerSec * 0.9),
+                "新StateMachineのスループットが旧StateMachineより10%以上低下しています");
+            Assert.Pass($"新StateMachineは旧StateMachineより {(newOpsPerSec / oldOpsPerSec):F2}x スループット向上");
+        }
+
+        [Test]
+        public void Comparison_OldVsNew_MemoryAllocation()
+        {
+            const int iterations = 10000;
+
+            Log("=== 旧StateMachine vs 新StateMachine メモリアロケーション比較 ===");
+            Log($"イテレーション数: {iterations:N0}");
+            Log("");
+
+            // ===== 旧StateMachineを先に計測（JIT/GC影響を均等化） =====
+            var oldContext = new ComplexGameContext(seed: 12345);
+            var oldStateMachine = CreateOldGameStateMachine(oldContext);
+            oldStateMachine.Update();
+
+            // ウォームアップ
+            for (int i = 0; i < 100; i++)
+            {
+                ExecuteOldTransitionCycle(oldStateMachine);
+            }
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            int oldGen0Before = GC.CollectionCount(0);
+            int oldGen1Before = GC.CollectionCount(1);
+            int oldGen2Before = GC.CollectionCount(2);
+            long oldMemoryBefore = GC.GetTotalMemory(true);
+
+            for (int i = 0; i < iterations; i++)
+            {
+                oldStateMachine.Update();
+                ExecuteOldTransitionCycle(oldStateMachine);
+            }
+
+            int oldGen0After = GC.CollectionCount(0);
+            int oldGen1After = GC.CollectionCount(1);
+            int oldGen2After = GC.CollectionCount(2);
+            long oldMemoryAfter = GC.GetTotalMemory(false);
+
+            long oldMemoryAllocated = oldMemoryAfter - oldMemoryBefore;
+            int oldGen0Collections = oldGen0After - oldGen0Before;
+            int oldGen1Collections = oldGen1After - oldGen1Before;
+            int oldGen2Collections = oldGen2After - oldGen2Before;
+
+            // ===== 新StateMachineの計測 =====
+            var newContext = new ComplexGameContext(seed: 12345);
+            var newStateMachine = CreateGameStateMachine(newContext);
+            newStateMachine.Update();
+
+            // ウォームアップ
+            for (int i = 0; i < 100; i++)
+            {
+                ExecuteTransitionCycle(newStateMachine);
+            }
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            int newGen0Before = GC.CollectionCount(0);
+            int newGen1Before = GC.CollectionCount(1);
+            int newGen2Before = GC.CollectionCount(2);
+            long newMemoryBefore = GC.GetTotalMemory(true);
+
+            for (int i = 0; i < iterations; i++)
+            {
+                newStateMachine.Update();
+                ExecuteTransitionCycle(newStateMachine);
+            }
+
+            int newGen0After = GC.CollectionCount(0);
+            int newGen1After = GC.CollectionCount(1);
+            int newGen2After = GC.CollectionCount(2);
+            long newMemoryAfter = GC.GetTotalMemory(false);
+
+            long newMemoryAllocated = newMemoryAfter - newMemoryBefore;
+            int newGen0Collections = newGen0After - newGen0Before;
+            int newGen1Collections = newGen1After - newGen1Before;
+            int newGen2Collections = newGen2After - newGen2Before;
+
+            // 結果出力
+            Log("[旧StateMachine]");
+            Log($"  メモリアロケーション: {oldMemoryAllocated:N0} bytes");
+            Log($"  バイト/イテレーション: {(double)oldMemoryAllocated / iterations:F2} bytes");
+            Log($"  GC Gen0: {oldGen0Collections}");
+            Log($"  GC Gen1: {oldGen1Collections}");
+            Log($"  GC Gen2: {oldGen2Collections}");
+            Log("");
+            Log("[新StateMachine]");
+            Log($"  メモリアロケーション: {newMemoryAllocated:N0} bytes");
+            Log($"  バイト/イテレーション: {(double)newMemoryAllocated / iterations:F2} bytes");
+            Log($"  GC Gen0: {newGen0Collections}");
+            Log($"  GC Gen1: {newGen1Collections}");
+            Log($"  GC Gen2: {newGen2Collections}");
+            Log("");
+            Log("[改善率]");
+            if (oldMemoryAllocated > 0 && newMemoryAllocated > 0)
+            {
+                Log($"  メモリ使用量: {((double)oldMemoryAllocated / newMemoryAllocated):F2}x 削減");
+            }
+            else if (oldMemoryAllocated > 0 && newMemoryAllocated <= 0)
+            {
+                Log($"  メモリ使用量: 新StateMachineはアロケーションなし (旧: {oldMemoryAllocated:N0} bytes)");
+            }
+            else
+            {
+                Log($"  メモリ使用量: 旧={oldMemoryAllocated:N0} bytes, 新={newMemoryAllocated:N0} bytes");
+            }
+
+            Log($"  GC Gen0削減: {oldGen0Collections - newGen0Collections}回");
+            Log($"  GC Gen1削減: {oldGen1Collections - newGen1Collections}回");
+            Log($"  GC Gen2削減: {oldGen2Collections - newGen2Collections}回");
+
+            // 新StateMachineは旧StateMachine以下のメモリアロケーションであること
+            Assert.That(newMemoryAllocated, Is.LessThanOrEqualTo(oldMemoryAllocated + 1000),
+                "新StateMachineのメモリアロケーションが旧StateMachineより大幅に増加しています");
+            Assert.Pass($"メモリアロケーション: 旧={oldMemoryAllocated:N0} bytes, 新={newMemoryAllocated:N0} bytes");
+        }
+
+        [Test]
+        public void Comparison_OldVsNew_ComprehensiveBenchmark()
+        {
+            const int iterations = 30000;
+            // 最大遷移時間計測用のリストを事前に確保（List拡張によるGCを防止）
+            const int expectedTransitions = iterations / 10 * 3; // 約9000回の遷移
+
+            Log("=== 旧StateMachine vs 新StateMachine 総合ベンチマーク ===");
+            Log($"イテレーション数: {iterations:N0}");
+            Log("");
+
+            var transitionStopwatch = new Stopwatch();
+
+            // ===== 旧StateMachineを先に計測（JIT/GC影響を均等化） =====
+            var oldContext = new ComplexGameContext(seed: 12345);
+            var oldStateMachine = CreateOldGameStateMachine(oldContext);
+            oldStateMachine.Update();
+
+            // ウォームアップ
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                oldStateMachine.Update();
+                ExecuteOldTransitionCycle(oldStateMachine);
+            }
+
+            oldContext.Reset();
+            oldContext.TransitionCounter.Reset();
+            // 事前にリスト容量を確保してList拡張によるGCを防止
+            oldContext.TransitionCounter.TransitionTimesMs.Capacity = expectedTransitions;
+            oldStateMachine.Update();
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            int oldGen0Before = GC.CollectionCount(0);
+            long oldMemoryBefore = GC.GetTotalMemory(true);
+
+            var oldStopwatch = new Stopwatch();
+            oldStopwatch.Start();
+
+            int oldTotalTransitions = 0;
+            for (int i = 0; i < iterations; i++)
+            {
+                oldStateMachine.Update();
+
+                if (i % 10 == 0)
+                {
+                    oldTotalTransitions += ExecuteOldTransitionCycleWithTiming(oldStateMachine, oldContext, transitionStopwatch);
+                }
+
+                if (i % 2 == 0)
+                {
+                    oldStateMachine.FixedUpdate();
+                }
+                oldStateMachine.LateUpdate();
+            }
+
+            oldStopwatch.Stop();
+
+            int oldGen0After = GC.CollectionCount(0);
+            long oldMemoryAfter = GC.GetTotalMemory(false);
+
+            double oldTotalMs = oldStopwatch.Elapsed.TotalMilliseconds;
+            double oldAvgTransitionTimeMs = oldContext.TransitionCounter.GetAverageTransitionTimeMs();
+            double oldP99TransitionTimeMs = oldContext.TransitionCounter.GetPercentileTransitionTimeMs(0.99);
+            double oldMaxTransitionTimeMs = oldContext.TransitionCounter.MaxTransitionTimeMs;
+            double oldThroughput = iterations / (oldTotalMs / 1000.0);
+            double oldTransitionThroughput = oldContext.TransitionCounter.SuccessCount / (oldTotalMs / 1000.0);
+            long oldMemoryAllocated = oldMemoryAfter - oldMemoryBefore;
+            int oldGcCount = oldGen0After - oldGen0Before;
+
+            // ===== 新StateMachineの計測 =====
+            var newContext = new ComplexGameContext(seed: 12345);
+            var newStateMachine = CreateGameStateMachine(newContext);
+            newStateMachine.Update();
+
+            // ウォームアップ
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                newStateMachine.Update();
+                ExecuteTransitionCycle(newStateMachine);
+            }
+
+            newContext.Reset();
+            newContext.TransitionCounter.Reset();
+            // 事前にリスト容量を確保してList拡張によるGCを防止
+            newContext.TransitionCounter.TransitionTimesMs.Capacity = expectedTransitions;
+            newStateMachine.Update();
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            int newGen0Before = GC.CollectionCount(0);
+            long newMemoryBefore = GC.GetTotalMemory(true);
+
+            var newStopwatch = new Stopwatch();
+            newStopwatch.Start();
+
+            int newTotalTransitions = 0;
+            for (int i = 0; i < iterations; i++)
+            {
+                newStateMachine.Update();
+
+                if (i % 10 == 0)
+                {
+                    newTotalTransitions += ExecuteTransitionCycleWithTiming(newStateMachine, newContext, transitionStopwatch);
+                }
+
+                if (i % 2 == 0)
+                {
+                    newStateMachine.FixedUpdate();
+                }
+                newStateMachine.LateUpdate();
+            }
+
+            newStopwatch.Stop();
+
+            int newGen0After = GC.CollectionCount(0);
+            long newMemoryAfter = GC.GetTotalMemory(false);
+
+            double newTotalMs = newStopwatch.Elapsed.TotalMilliseconds;
+            double newAvgTransitionTimeMs = newContext.TransitionCounter.GetAverageTransitionTimeMs();
+            double newP99TransitionTimeMs = newContext.TransitionCounter.GetPercentileTransitionTimeMs(0.99);
+            double newMaxTransitionTimeMs = newContext.TransitionCounter.MaxTransitionTimeMs;
+            double newThroughput = iterations / (newTotalMs / 1000.0);
+            double newTransitionThroughput = newContext.TransitionCounter.SuccessCount / (newTotalMs / 1000.0);
+            long newMemoryAllocated = newMemoryAfter - newMemoryBefore;
+            int newGcCount = newGen0After - newGen0Before;
+
+            // ===== 結果出力 =====
+            Log("┌────────────────────────────────────────────────────────────────┐");
+            Log("│            総合ベンチマーク結果                                │");
+            Log("├────────────────────────────────────────────────────────────────┤");
+            Log($"│ {"項目",-20} │ {"旧StateMachine",15} │ {"新StateMachine",15} │ {"改善率",10} │");
+            Log("├────────────────────────────────────────────────────────────────┤");
+            Log($"│ {"総実行時間 (ms)",-20} │ {oldTotalMs,15:F3} │ {newTotalMs,15:F3} │ {(oldTotalMs / newTotalMs),9:F2}x │");
+            Log($"│ {"平均遷移時間 (μs)",-20} │ {oldAvgTransitionTimeMs * 1000,15:F3} │ {newAvgTransitionTimeMs * 1000,15:F3} │ {(oldAvgTransitionTimeMs / newAvgTransitionTimeMs),9:F2}x │");
+            Log($"│ {"P99遷移時間 (μs)",-20} │ {oldP99TransitionTimeMs * 1000,15:F3} │ {newP99TransitionTimeMs * 1000,15:F3} │ {(oldP99TransitionTimeMs / newP99TransitionTimeMs),9:F2}x │");
+            Log($"│ {"最大遷移時間 (μs)",-20} │ {oldMaxTransitionTimeMs * 1000,15:F3} │ {newMaxTransitionTimeMs * 1000,15:F3} │ {(oldMaxTransitionTimeMs / newMaxTransitionTimeMs),9:F2}x │");
+            Log($"│ {"スループット (ops/s)",-20} │ {oldThroughput,15:N0} │ {newThroughput,15:N0} │ {(newThroughput / oldThroughput),9:F2}x │");
+            Log($"│ {"遷移/秒",-20} │ {oldTransitionThroughput,15:N0} │ {newTransitionThroughput,15:N0} │ {(newTransitionThroughput / oldTransitionThroughput),9:F2}x │");
+            Log($"│ {"メモリ (bytes)",-20} │ {oldMemoryAllocated,15:N0} │ {newMemoryAllocated,15:N0} │ {(oldMemoryAllocated > 0 && newMemoryAllocated > 0 ? ((double)oldMemoryAllocated / newMemoryAllocated).ToString("F2") : "N/A"),9}x │");
+            Log($"│ {"GC発生回数",-20} │ {oldGcCount,15:N0} │ {newGcCount,15:N0} │ {(oldGcCount - newGcCount),9:N0} │");
+            Log("└────────────────────────────────────────────────────────────────┘");
+
+            Log("");
+            Log("[詳細]");
+            Log($"  遷移回数: 旧={oldTotalTransitions:N0}, 新={newTotalTransitions:N0}");
+            Log($"  成功遷移数: 旧={oldContext.TransitionCounter.SuccessCount:N0}, 新={newContext.TransitionCounter.SuccessCount:N0}");
+
+            Assert.Pass($"総合ベンチマーク完了 - {(oldTotalMs / newTotalMs):F2}x 高速化");
+        }
+
+        #endregion
+
+        #region Old StateMachine Helper Methods
+
+        private int ExecuteOldTransitionCycle(OldStateMachine<ComplexGameContext, GameStateEvent> stateMachine)
+        {
+            int transitions = 0;
+
+            // Idle -> Combat -> Victory -> Idle
+            transitions += TryOldTransition(stateMachine, GameStateEvent.EnterCombat);
+            transitions += TryOldTransition(stateMachine, GameStateEvent.Victory);
+            transitions += TryOldTransition(stateMachine, GameStateEvent.Complete);
+
+            return transitions;
+        }
+
+        private int TryOldTransition(
+            OldStateMachine<ComplexGameContext, GameStateEvent> stateMachine,
+            GameStateEvent evt)
+        {
+            var result = stateMachine.Transition(evt);
+
+            switch (result)
+            {
+                case OldStateEventResult.Succeeded:
+                    stateMachine.Update();
+                    return 1;
+
+                case OldStateEventResult.Waiting:
+                    while (stateMachine.IsProcessing())
+                    {
+                        stateMachine.Update();
+                    }
+                    return 1;
+
+                case OldStateEventResult.Failed:
+                default:
+                    return 0;
+            }
+        }
+
+        private int ExecuteOldTransitionCycleWithTiming(
+            OldStateMachine<ComplexGameContext, GameStateEvent> stateMachine,
+            ComplexGameContext context,
+            Stopwatch stopwatch)
+        {
+            int transitions = 0;
+
+            // Idle -> Combat -> Victory -> Idle
+            transitions += TryOldTransitionWithTiming(stateMachine, context, GameStateEvent.EnterCombat, stopwatch);
+            transitions += TryOldTransitionWithTiming(stateMachine, context, GameStateEvent.Victory, stopwatch);
+            transitions += TryOldTransitionWithTiming(stateMachine, context, GameStateEvent.Complete, stopwatch);
+
+            return transitions;
+        }
+
+        private int TryOldTransitionWithTiming(
+            OldStateMachine<ComplexGameContext, GameStateEvent> stateMachine,
+            ComplexGameContext context,
+            GameStateEvent evt,
+            Stopwatch stopwatch)
+        {
+            var counter = context.TransitionCounter;
+
+            stopwatch.Restart();
+            var result = stateMachine.Transition(evt);
+            stopwatch.Stop();
+
+            double elapsedMs = stopwatch.Elapsed.TotalMilliseconds;
+
+            switch (result)
+            {
+                case OldStateEventResult.Succeeded:
+                    counter.RecordTransitionResult(true, elapsedMs);
+                    stateMachine.Update();
+                    return 1;
+
+                case OldStateEventResult.Waiting:
+                    counter.RecordTransitionResult(true, elapsedMs);
+                    while (stateMachine.IsProcessing())
+                    {
+                        stateMachine.Update();
+                    }
+                    return 1;
+
+                case OldStateEventResult.Failed:
+                default:
+                    counter.RecordTransitionResult(false, elapsedMs);
+                    return 0;
+            }
         }
 
         #endregion
