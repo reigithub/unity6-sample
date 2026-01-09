@@ -12,7 +12,7 @@ namespace Game.Core.Services
         // AddMessageBroker～BuildServiceProviderを1ヶ所に集約してみる
         public GlobalMessageBroker GlobalMessageBroker { get; private set; } = new();
 
-        protected internal override void Startup()
+        public override void Startup()
         {
             // 使うやつは予めココに全て記述する…
             GlobalMessageBroker.AddMessageBroker<int, int>();
@@ -37,13 +37,11 @@ namespace Game.Core.Services
             GlobalMessageBroker.Build();
         }
 
-        protected internal override void Shutdown()
+        public override void Shutdown()
         {
             RemoveAll();
             GlobalMessageBroker = null;
         }
-
-        protected internal override bool AllowResidentOnMemory => true;
 
         #region MessageBroker
 

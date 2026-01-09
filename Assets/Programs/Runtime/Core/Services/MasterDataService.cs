@@ -14,15 +14,13 @@ namespace Game.Core.Services
 
         public MemoryDatabase MemoryDatabase { get; private set; }
 
-        protected internal override void Startup()
+        public override void Startup()
         {
             var formatterResolvers = MasterDataHelper.GetMessagePackFormatterResolvers();
             StaticCompositeResolver.Instance.Register(formatterResolvers);
             var options = MessagePackSerializerOptions.Standard.WithResolver(StaticCompositeResolver.Instance);
             MessagePackSerializer.DefaultOptions = options;
         }
-
-        protected internal override bool AllowResidentOnMemory => true;
 
         public async Task LoadMasterDataAsync()
         {

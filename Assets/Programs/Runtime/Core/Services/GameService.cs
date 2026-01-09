@@ -1,15 +1,19 @@
 namespace Game.Core.Services
 {
-    public abstract class GameService
+    public interface IGameService
     {
-        protected internal virtual void Startup()
+        public void Startup();
+        public void Shutdown();
+    }
+
+    public abstract class GameService : IGameService
+    {
+        public virtual void Startup()
         {
         }
 
-        protected internal virtual void Shutdown()
+        public virtual void Shutdown()
         {
         }
-
-        protected internal virtual bool AllowResidentOnMemory => false;
     }
 }

@@ -24,13 +24,11 @@ namespace Game.Core.Services
             };
         }
 
-        protected internal override void Shutdown()
+        public override void Shutdown()
         {
             _gameStageResults.Clear();
             base.Shutdown();
         }
-
-        protected internal override bool AllowResidentOnMemory => true;
     }
 
     // Request/Responseじゃなくてもよいが実験的に入れてみた、が多分MessageBrokerでいい

@@ -29,7 +29,7 @@ namespace Game.Core.Services
         private readonly float _sfxVolume = 0.7f;
         private readonly float _sfxFadeDuration = 0.1f;
 
-        protected internal override void Startup()
+        public override void Startup()
         {
             _audioService = new GameObject(nameof(AudioService));
             _bgmSource = new GameObject("BgmSource").AddComponent<AudioSource>();
@@ -45,7 +45,7 @@ namespace Game.Core.Services
             base.Startup();
         }
 
-        protected internal override void Shutdown()
+        public override void Shutdown()
         {
             _bgmSource.SafeDestroy();
             _bgmSource = null;
@@ -58,8 +58,6 @@ namespace Game.Core.Services
 
             base.Shutdown();
         }
-
-        protected internal override bool AllowResidentOnMemory => true;
 
         public async Task PlayBgmAsync(string assetName)
         {

@@ -23,8 +23,6 @@ namespace Game.Core.Services
         private GameServiceReference<MessageBrokerService> _messageBrokerService;
         private GlobalMessageBroker GlobalMessageBroker => _messageBrokerService.Reference.GlobalMessageBroker;
 
-        protected internal override bool AllowResidentOnMemory => true;
-
         private readonly LinkedList<IGameScene> _gameScenes = new();
 
         private const GameSceneOperations DefaultOperations = GameSceneConstants.DefaultOperations;
@@ -32,7 +30,7 @@ namespace Game.Core.Services
         public async UniTask TransitionAsync<TScene>(GameSceneOperations operations = DefaultOperations)
             where TScene : IGameScene, new()
         {
-            await OperationAsync(operations);
+            await CurrentSceneOperationAsync(operations);
 
             var gameScene = new TScene();
             _gameScenes.AddLast(gameScene);
@@ -43,7 +41,7 @@ namespace Game.Core.Services
         public async UniTask TransitionAsync<TScene, TArg>(TArg arg, GameSceneOperations operations = DefaultOperations)
             where TScene : IGameScene, new()
         {
-            await OperationAsync(operations);
+            await CurrentSceneOperationAsync(operations);
 
             var gameScene = new TScene();
             CreateArgHandler(gameScene, arg);
@@ -55,7 +53,7 @@ namespace Game.Core.Services
         public async UniTask<TResult> TransitionAsync<TScene, TResult>(GameSceneOperations operations = DefaultOperations)
             where TScene : IGameScene, new()
         {
-            await OperationAsync(operations);
+            await CurrentSceneOperationAsync(operations);
 
             var gameScene = new TScene();
             var tcs = CreateResultTcs<TResult>(gameScene);
@@ -68,7 +66,7 @@ namespace Game.Core.Services
         public async UniTask<TResult> TransitionAsync<TScene, TArg, TResult>(TArg arg, GameSceneOperations operations = DefaultOperations)
             where TScene : IGameScene, new()
         {
-            await OperationAsync(operations);
+            await CurrentSceneOperationAsync(operations);
 
             var gameScene = new TScene();
             CreateArgHandler(gameScene, arg);
@@ -135,7 +133,7 @@ namespace Game.Core.Services
         }
 
         // 主に遷移前に現在のシーンに対して何かする
-        private async UniTask OperationAsync(GameSceneOperations operations = DefaultOperations)
+        private async UniTask CurrentSceneOperationAsync(GameSceneOperations operations = DefaultOperations)
         {
             // シーン遷移が起こる時はダイアログはすべて閉じる
             await TerminateAllDialogAsync();
