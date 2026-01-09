@@ -2110,21 +2110,32 @@ namespace Game.Editor.Tests
             const int iterations = 50000;
             var transitionStopwatch = new Stopwatch();
 
-            Log("=== 旧StateMachine vs 新StateMachine 遷移時間比較 ===");
-            Log($"イテレーション数: {iterations:N0}");
+            Log("# 旧StateMachine vs 新StateMachine 遷移時間比較");
+            Log("");
+            Log($"- イテレーション数: {iterations:N0}");
             Log("");
 
-            // ===== 旧StateMachineを先に計測（JIT/GC影響を均等化） =====
+            // ===== 両方のStateMachineを作成 =====
             var oldContext = new ComplexGameContext(seed: 12345);
             var oldStateMachine = CreateOldGameStateMachine(oldContext);
-            oldStateMachine.Update();
 
-            // ウォームアップ
+            var newContext = new ComplexGameContext(seed: 12345);
+            var newStateMachine = CreateGameStateMachine(newContext);
+
+            // ===== 両方をウォームアップ（JITコンパイル完了させる） =====
+            oldStateMachine.Update();
             for (int i = 0; i < WarmupIterations; i++)
             {
                 ExecuteOldTransitionCycleWithTiming(oldStateMachine, oldContext, transitionStopwatch);
             }
 
+            newStateMachine.Update();
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                ExecuteTransitionCycleWithTiming(newStateMachine, newContext, transitionStopwatch);
+            }
+
+            // ===== 旧StateMachineの計測 =====
             oldContext.Reset();
             oldContext.TransitionCounter.Reset();
             oldStateMachine.Update();
@@ -2155,16 +2166,6 @@ namespace Game.Editor.Tests
             int oldGcCount = oldEndGcCount - oldStartGcCount;
 
             // ===== 新StateMachineの計測 =====
-            var newContext = new ComplexGameContext(seed: 12345);
-            var newStateMachine = CreateGameStateMachine(newContext);
-            newStateMachine.Update();
-
-            // ウォームアップ
-            for (int i = 0; i < WarmupIterations; i++)
-            {
-                ExecuteTransitionCycleWithTiming(newStateMachine, newContext, transitionStopwatch);
-            }
-
             newContext.Reset();
             newContext.TransitionCounter.Reset();
             newStateMachine.Update();
@@ -2194,35 +2195,21 @@ namespace Game.Editor.Tests
             long newMemoryAllocated = newEndMemory - newStartMemory;
             int newGcCount = newEndGcCount - newStartGcCount;
 
-            // 結果出力
-            Log("[旧StateMachine]");
-            Log($"  総実行時間: {oldTotalMs:F3} ms");
-            Log($"  平均遷移時間: {oldAvgTransitionTimeMs * 1000:F3} μs");
-            Log($"  最大遷移時間: {oldMaxTransitionTimeMs * 1000:F3} μs");
-            Log($"  遷移スループット: {oldSuccessCount / (oldTotalMs / 1000.0):N0} transitions/sec");
-            Log($"  メモリアロケーション: {oldMemoryAllocated:N0} bytes");
-            Log($"  GC発生回数: {oldGcCount}");
+            // 結果出力 (Markdown形式)
+            var memoryImprovement = oldMemoryAllocated > 0 && newMemoryAllocated > 0
+                ? $"{((double)oldMemoryAllocated / newMemoryAllocated):F2}x"
+                : "N/A";
+
+            Log("## 遷移タイミング比較結果");
             Log("");
-            Log("[新StateMachine]");
-            Log($"  総実行時間: {newTotalMs:F3} ms");
-            Log($"  平均遷移時間: {newAvgTransitionTimeMs * 1000:F3} μs");
-            Log($"  最大遷移時間: {newMaxTransitionTimeMs * 1000:F3} μs");
-            Log($"  遷移スループット: {newSuccessCount / (newTotalMs / 1000.0):N0} transitions/sec");
-            Log($"  メモリアロケーション: {newMemoryAllocated:N0} bytes");
-            Log($"  GC発生回数: {newGcCount}");
-            Log("");
-            Log("[改善率]");
-            Log($"  実行時間: {(oldTotalMs / newTotalMs):F2}x 高速化");
-            Log($"  平均遷移時間: {(oldAvgTransitionTimeMs / newAvgTransitionTimeMs):F2}x 高速化");
-            Log($"  スループット: {((newSuccessCount / (newTotalMs / 1000.0)) / (oldSuccessCount / (oldTotalMs / 1000.0))):F2}x 向上");
-            if (oldMemoryAllocated > 0 && newMemoryAllocated > 0)
-            {
-                Log($"  メモリ使用量: {((double)oldMemoryAllocated / newMemoryAllocated):F2}x 削減");
-            }
-            else
-            {
-                Log($"  メモリ使用量: 旧={oldMemoryAllocated:N0} bytes, 新={newMemoryAllocated:N0} bytes");
-            }
+            Log("| 項目 | 旧StateMachine | 新StateMachine | 改善率 |");
+            Log("|:-----|---------------:|---------------:|-------:|");
+            Log($"| 総実行時間 (ms) | {oldTotalMs:F3} | {newTotalMs:F3} | {(oldTotalMs / newTotalMs):F2}x |");
+            Log($"| 平均遷移時間 (μs) | {oldAvgTransitionTimeMs * 1000:F3} | {newAvgTransitionTimeMs * 1000:F3} | {(oldAvgTransitionTimeMs / newAvgTransitionTimeMs):F2}x |");
+            Log($"| 最大遷移時間 (μs) | {oldMaxTransitionTimeMs * 1000:F3} | {newMaxTransitionTimeMs * 1000:F3} | {(oldMaxTransitionTimeMs / newMaxTransitionTimeMs):F2}x |");
+            Log($"| 遷移スループット (ops/s) | {oldSuccessCount / (oldTotalMs / 1000.0):N0} | {newSuccessCount / (newTotalMs / 1000.0):N0} | {((newSuccessCount / (newTotalMs / 1000.0)) / (oldSuccessCount / (oldTotalMs / 1000.0))):F2}x |");
+            Log($"| メモリ (bytes) | {oldMemoryAllocated:N0} | {newMemoryAllocated:N0} | {memoryImprovement} |");
+            Log($"| GC発生回数 | {oldGcCount} | {newGcCount} | {oldGcCount - newGcCount} |");
 
             Assert.Pass($"新StateMachineは旧StateMachineより {(oldTotalMs / newTotalMs):F2}x 高速");
         }
@@ -2232,20 +2219,30 @@ namespace Game.Editor.Tests
         {
             const int iterations = 100000;
 
-            Log("=== 旧StateMachine vs 新StateMachine Update スループット比較 ===");
-            Log($"イテレーション数: {iterations:N0}");
+            Log("# 旧StateMachine vs 新StateMachine Update スループット比較");
+            Log("");
+            Log($"- イテレーション数: {iterations:N0}");
             Log("");
 
-            // ===== 旧StateMachineを先に計測（JIT/GC影響を均等化） =====
+            // ===== 両方のStateMachineを作成 =====
             var oldContext = new ComplexGameContext(seed: 12345);
             var oldStateMachine = CreateOldGameStateMachine(oldContext);
 
-            // ウォームアップ
+            var newContext = new ComplexGameContext(seed: 12345);
+            var newStateMachine = CreateGameStateMachine(newContext);
+
+            // ===== 両方をウォームアップ（JITコンパイル完了させる） =====
             for (int i = 0; i < WarmupIterations; i++)
             {
                 oldStateMachine.Update();
             }
 
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                newStateMachine.Update();
+            }
+
+            // ===== 旧StateMachineの計測 =====
             oldContext.Reset();
 
             GC.Collect();
@@ -2272,15 +2269,6 @@ namespace Game.Editor.Tests
             int oldGcCount = oldEndGcCount - oldStartGcCount;
 
             // ===== 新StateMachineの計測 =====
-            var newContext = new ComplexGameContext(seed: 12345);
-            var newStateMachine = CreateGameStateMachine(newContext);
-
-            // ウォームアップ
-            for (int i = 0; i < WarmupIterations; i++)
-            {
-                newStateMachine.Update();
-            }
-
             newContext.Reset();
 
             GC.Collect();
@@ -2306,32 +2294,20 @@ namespace Game.Editor.Tests
             long newMemoryAllocated = newEndMemory - newStartMemory;
             int newGcCount = newEndGcCount - newStartGcCount;
 
-            // 結果出力
-            Log("[旧StateMachine]");
-            Log($"  総実行時間: {oldTotalMs:F3} ms");
-            Log($"  平均時間/Update: {oldTotalMs / iterations:F6} ms");
-            Log($"  スループット: {oldOpsPerSec:N0} ops/sec");
-            Log($"  メモリアロケーション: {oldMemoryAllocated:N0} bytes");
-            Log($"  GC発生回数: {oldGcCount}");
+            // 結果出力 (Markdown形式)
+            var memoryImprovement = oldMemoryAllocated > 0 && newMemoryAllocated > 0
+                ? $"{((double)oldMemoryAllocated / newMemoryAllocated):F2}x"
+                : "N/A";
+
+            Log("## Updateスループット比較結果");
             Log("");
-            Log("[新StateMachine]");
-            Log($"  総実行時間: {newTotalMs:F3} ms");
-            Log($"  平均時間/Update: {newTotalMs / iterations:F6} ms");
-            Log($"  スループット: {newOpsPerSec:N0} ops/sec");
-            Log($"  メモリアロケーション: {newMemoryAllocated:N0} bytes");
-            Log($"  GC発生回数: {newGcCount}");
-            Log("");
-            Log("[改善率]");
-            Log($"  実行時間: {(oldTotalMs / newTotalMs):F2}x 高速化");
-            Log($"  スループット: {(newOpsPerSec / oldOpsPerSec):F2}x 向上");
-            if (oldMemoryAllocated > 0 && newMemoryAllocated > 0)
-            {
-                Log($"  メモリ使用量: {((double)oldMemoryAllocated / newMemoryAllocated):F2}x 削減");
-            }
-            else
-            {
-                Log($"  メモリ使用量: 旧={oldMemoryAllocated:N0} bytes, 新={newMemoryAllocated:N0} bytes");
-            }
+            Log("| 項目 | 旧StateMachine | 新StateMachine | 改善率 |");
+            Log("|:-----|---------------:|---------------:|-------:|");
+            Log($"| 総実行時間 (ms) | {oldTotalMs:F3} | {newTotalMs:F3} | {(oldTotalMs / newTotalMs):F2}x |");
+            Log($"| 平均時間/Update (ms) | {oldTotalMs / iterations:F6} | {newTotalMs / iterations:F6} | {(oldTotalMs / newTotalMs):F2}x |");
+            Log($"| スループット (ops/s) | {oldOpsPerSec:N0} | {newOpsPerSec:N0} | {(newOpsPerSec / oldOpsPerSec):F2}x |");
+            Log($"| メモリ (bytes) | {oldMemoryAllocated:N0} | {newMemoryAllocated:N0} | {memoryImprovement} |");
+            Log($"| GC発生回数 | {oldGcCount} | {newGcCount} | {oldGcCount - newGcCount} |");
 
             Assert.That(newOpsPerSec, Is.GreaterThanOrEqualTo(oldOpsPerSec * 0.9),
                 "新StateMachineのスループットが旧StateMachineより10%以上低下しています");
@@ -2343,21 +2319,32 @@ namespace Game.Editor.Tests
         {
             const int iterations = 10000;
 
-            Log("=== 旧StateMachine vs 新StateMachine メモリアロケーション比較 ===");
-            Log($"イテレーション数: {iterations:N0}");
+            Log("# 旧StateMachine vs 新StateMachine メモリアロケーション比較");
+            Log("");
+            Log($"- イテレーション数: {iterations:N0}");
             Log("");
 
-            // ===== 旧StateMachineを先に計測（JIT/GC影響を均等化） =====
+            // ===== 両方のStateMachineを作成 =====
             var oldContext = new ComplexGameContext(seed: 12345);
             var oldStateMachine = CreateOldGameStateMachine(oldContext);
-            oldStateMachine.Update();
 
-            // ウォームアップ
+            var newContext = new ComplexGameContext(seed: 12345);
+            var newStateMachine = CreateGameStateMachine(newContext);
+
+            // ===== 両方をウォームアップ（JITコンパイル完了させる） =====
+            oldStateMachine.Update();
             for (int i = 0; i < 100; i++)
             {
                 ExecuteOldTransitionCycle(oldStateMachine);
             }
 
+            newStateMachine.Update();
+            for (int i = 0; i < 100; i++)
+            {
+                ExecuteTransitionCycle(newStateMachine);
+            }
+
+            // ===== 旧StateMachineの計測 =====
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
@@ -2384,16 +2371,6 @@ namespace Game.Editor.Tests
             int oldGen2Collections = oldGen2After - oldGen2Before;
 
             // ===== 新StateMachineの計測 =====
-            var newContext = new ComplexGameContext(seed: 12345);
-            var newStateMachine = CreateGameStateMachine(newContext);
-            newStateMachine.Update();
-
-            // ウォームアップ
-            for (int i = 0; i < 100; i++)
-            {
-                ExecuteTransitionCycle(newStateMachine);
-            }
-
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
@@ -2419,38 +2396,30 @@ namespace Game.Editor.Tests
             int newGen1Collections = newGen1After - newGen1Before;
             int newGen2Collections = newGen2After - newGen2Before;
 
-            // 結果出力
-            Log("[旧StateMachine]");
-            Log($"  メモリアロケーション: {oldMemoryAllocated:N0} bytes");
-            Log($"  バイト/イテレーション: {(double)oldMemoryAllocated / iterations:F2} bytes");
-            Log($"  GC Gen0: {oldGen0Collections}");
-            Log($"  GC Gen1: {oldGen1Collections}");
-            Log($"  GC Gen2: {oldGen2Collections}");
-            Log("");
-            Log("[新StateMachine]");
-            Log($"  メモリアロケーション: {newMemoryAllocated:N0} bytes");
-            Log($"  バイト/イテレーション: {(double)newMemoryAllocated / iterations:F2} bytes");
-            Log($"  GC Gen0: {newGen0Collections}");
-            Log($"  GC Gen1: {newGen1Collections}");
-            Log($"  GC Gen2: {newGen2Collections}");
-            Log("");
-            Log("[改善率]");
+            // 結果出力 (Markdown形式)
+            string memoryImprovement;
             if (oldMemoryAllocated > 0 && newMemoryAllocated > 0)
             {
-                Log($"  メモリ使用量: {((double)oldMemoryAllocated / newMemoryAllocated):F2}x 削減");
+                memoryImprovement = $"{((double)oldMemoryAllocated / newMemoryAllocated):F2}x";
             }
             else if (oldMemoryAllocated > 0 && newMemoryAllocated <= 0)
             {
-                Log($"  メモリ使用量: 新StateMachineはアロケーションなし (旧: {oldMemoryAllocated:N0} bytes)");
+                memoryImprovement = "∞ (アロケーションなし)";
             }
             else
             {
-                Log($"  メモリ使用量: 旧={oldMemoryAllocated:N0} bytes, 新={newMemoryAllocated:N0} bytes");
+                memoryImprovement = "N/A";
             }
 
-            Log($"  GC Gen0削減: {oldGen0Collections - newGen0Collections}回");
-            Log($"  GC Gen1削減: {oldGen1Collections - newGen1Collections}回");
-            Log($"  GC Gen2削減: {oldGen2Collections - newGen2Collections}回");
+            Log("## メモリアロケーション比較結果");
+            Log("");
+            Log("| 項目 | 旧StateMachine | 新StateMachine | 改善率 |");
+            Log("|:-----|---------------:|---------------:|-------:|");
+            Log($"| メモリ (bytes) | {oldMemoryAllocated:N0} | {newMemoryAllocated:N0} | {memoryImprovement} |");
+            Log($"| バイト/イテレーション | {(double)oldMemoryAllocated / iterations:F2} | {(double)newMemoryAllocated / iterations:F2} | {memoryImprovement} |");
+            Log($"| GC Gen0 | {oldGen0Collections} | {newGen0Collections} | {oldGen0Collections - newGen0Collections} |");
+            Log($"| GC Gen1 | {oldGen1Collections} | {newGen1Collections} | {oldGen1Collections - newGen1Collections} |");
+            Log($"| GC Gen2 | {oldGen2Collections} | {newGen2Collections} | {oldGen2Collections - newGen2Collections} |");
 
             // 新StateMachineは旧StateMachine以下のメモリアロケーションであること
             Assert.That(newMemoryAllocated, Is.LessThanOrEqualTo(oldMemoryAllocated + 1000),
@@ -2465,27 +2434,38 @@ namespace Game.Editor.Tests
             // 最大遷移時間計測用のリストを事前に確保（List拡張によるGCを防止）
             const int expectedTransitions = iterations / 10 * 3; // 約9000回の遷移
 
-            Log("=== 旧StateMachine vs 新StateMachine 総合ベンチマーク ===");
-            Log($"イテレーション数: {iterations:N0}");
+            Log("# 旧StateMachine vs 新StateMachine 総合ベンチマーク");
+            Log("");
+            Log($"- イテレーション数: {iterations:N0}");
             Log("");
 
             var transitionStopwatch = new Stopwatch();
 
-            // ===== 旧StateMachineを先に計測（JIT/GC影響を均等化） =====
+            // ===== 両方のStateMachineを作成 =====
             var oldContext = new ComplexGameContext(seed: 12345);
             var oldStateMachine = CreateOldGameStateMachine(oldContext);
-            oldStateMachine.Update();
 
-            // ウォームアップ
+            var newContext = new ComplexGameContext(seed: 12345);
+            var newStateMachine = CreateGameStateMachine(newContext);
+
+            // ===== 両方をウォームアップ（JITコンパイル完了させる） =====
+            oldStateMachine.Update();
             for (int i = 0; i < WarmupIterations; i++)
             {
                 oldStateMachine.Update();
                 ExecuteOldTransitionCycle(oldStateMachine);
             }
 
+            newStateMachine.Update();
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                newStateMachine.Update();
+                ExecuteTransitionCycle(newStateMachine);
+            }
+
+            // ===== 旧StateMachineの計測 =====
             oldContext.Reset();
             oldContext.TransitionCounter.Reset();
-            // 事前にリスト容量を確保してList拡張によるGCを防止
             oldContext.TransitionCounter.TransitionTimesMs.Capacity = expectedTransitions;
             oldStateMachine.Update();
 
@@ -2531,20 +2511,8 @@ namespace Game.Editor.Tests
             int oldGcCount = oldGen0After - oldGen0Before;
 
             // ===== 新StateMachineの計測 =====
-            var newContext = new ComplexGameContext(seed: 12345);
-            var newStateMachine = CreateGameStateMachine(newContext);
-            newStateMachine.Update();
-
-            // ウォームアップ
-            for (int i = 0; i < WarmupIterations; i++)
-            {
-                newStateMachine.Update();
-                ExecuteTransitionCycle(newStateMachine);
-            }
-
             newContext.Reset();
             newContext.TransitionCounter.Reset();
-            // 事前にリスト容量を確保してList拡張によるGCを防止
             newContext.TransitionCounter.TransitionTimesMs.Capacity = expectedTransitions;
             newStateMachine.Update();
 
@@ -2589,26 +2557,24 @@ namespace Game.Editor.Tests
             long newMemoryAllocated = newMemoryAfter - newMemoryBefore;
             int newGcCount = newGen0After - newGen0Before;
 
-            // ===== 結果出力 =====
-            Log("┌────────────────────────────────────────────────────────────────┐");
-            Log("│            総合ベンチマーク結果                                │");
-            Log("├────────────────────────────────────────────────────────────────┤");
-            Log($"│ {"項目",-20} │ {"旧StateMachine",15} │ {"新StateMachine",15} │ {"改善率",10} │");
-            Log("├────────────────────────────────────────────────────────────────┤");
-            Log($"│ {"総実行時間 (ms)",-20} │ {oldTotalMs,15:F3} │ {newTotalMs,15:F3} │ {(oldTotalMs / newTotalMs),9:F2}x │");
-            Log($"│ {"平均遷移時間 (μs)",-20} │ {oldAvgTransitionTimeMs * 1000,15:F3} │ {newAvgTransitionTimeMs * 1000,15:F3} │ {(oldAvgTransitionTimeMs / newAvgTransitionTimeMs),9:F2}x │");
-            Log($"│ {"P99遷移時間 (μs)",-20} │ {oldP99TransitionTimeMs * 1000,15:F3} │ {newP99TransitionTimeMs * 1000,15:F3} │ {(oldP99TransitionTimeMs / newP99TransitionTimeMs),9:F2}x │");
-            Log($"│ {"最大遷移時間 (μs)",-20} │ {oldMaxTransitionTimeMs * 1000,15:F3} │ {newMaxTransitionTimeMs * 1000,15:F3} │ {(oldMaxTransitionTimeMs / newMaxTransitionTimeMs),9:F2}x │");
-            Log($"│ {"スループット (ops/s)",-20} │ {oldThroughput,15:N0} │ {newThroughput,15:N0} │ {(newThroughput / oldThroughput),9:F2}x │");
-            Log($"│ {"遷移/秒",-20} │ {oldTransitionThroughput,15:N0} │ {newTransitionThroughput,15:N0} │ {(newTransitionThroughput / oldTransitionThroughput),9:F2}x │");
-            Log($"│ {"メモリ (bytes)",-20} │ {oldMemoryAllocated,15:N0} │ {newMemoryAllocated,15:N0} │ {(oldMemoryAllocated > 0 && newMemoryAllocated > 0 ? ((double)oldMemoryAllocated / newMemoryAllocated).ToString("F2") : "N/A"),9}x │");
-            Log($"│ {"GC発生回数",-20} │ {oldGcCount,15:N0} │ {newGcCount,15:N0} │ {(oldGcCount - newGcCount),9:N0} │");
-            Log("└────────────────────────────────────────────────────────────────┘");
+            // ===== 結果出力 (Markdown形式) =====
+            Log("## 総合ベンチマーク結果");
+            Log("");
+            Log("| 項目 | 旧StateMachine | 新StateMachine | 改善率 |");
+            Log("|:-----|---------------:|---------------:|-------:|");
+            Log($"| 総実行時間 (ms) | {oldTotalMs:F3} | {newTotalMs:F3} | {(oldTotalMs / newTotalMs):F2}x |");
+            Log($"| 平均遷移時間 (μs) | {oldAvgTransitionTimeMs * 1000:F3} | {newAvgTransitionTimeMs * 1000:F3} | {(oldAvgTransitionTimeMs / newAvgTransitionTimeMs):F2}x |");
+            Log($"| P99遷移時間 (μs) | {oldP99TransitionTimeMs * 1000:F3} | {newP99TransitionTimeMs * 1000:F3} | {(oldP99TransitionTimeMs / newP99TransitionTimeMs):F2}x |");
+            Log($"| 最大遷移時間 (μs) | {oldMaxTransitionTimeMs * 1000:F3} | {newMaxTransitionTimeMs * 1000:F3} | {(oldMaxTransitionTimeMs / newMaxTransitionTimeMs):F2}x |");
+            Log($"| スループット (ops/s) | {oldThroughput:N0} | {newThroughput:N0} | {(newThroughput / oldThroughput):F2}x |");
+            Log($"| 遷移/秒 | {oldTransitionThroughput:N0} | {newTransitionThroughput:N0} | {(newTransitionThroughput / oldTransitionThroughput):F2}x |");
+            Log($"| メモリ (bytes) | {oldMemoryAllocated:N0} | {newMemoryAllocated:N0} | {(oldMemoryAllocated > 0 && newMemoryAllocated > 0 ? ((double)oldMemoryAllocated / newMemoryAllocated).ToString("F2") : "N/A")}x |");
+            Log($"| GC発生回数 | {oldGcCount:N0} | {newGcCount:N0} | {(oldGcCount - newGcCount):N0} |");
 
             Log("");
-            Log("[詳細]");
-            Log($"  遷移回数: 旧={oldTotalTransitions:N0}, 新={newTotalTransitions:N0}");
-            Log($"  成功遷移数: 旧={oldContext.TransitionCounter.SuccessCount:N0}, 新={newContext.TransitionCounter.SuccessCount:N0}");
+            Log("### 詳細");
+            Log($"- 遷移回数: 旧={oldTotalTransitions:N0}, 新={newTotalTransitions:N0}");
+            Log($"- 成功遷移数: 旧={oldContext.TransitionCounter.SuccessCount:N0}, 新={newContext.TransitionCounter.SuccessCount:N0}");
 
             Assert.Pass($"総合ベンチマーク完了 - {(oldTotalMs / newTotalMs):F2}x 高速化");
         }
