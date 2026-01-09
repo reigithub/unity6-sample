@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Game.Core.Services
 {
-    public class MasterDataService : IGameService
+    public class MasterDataService : IMasterDataService
     {
         private GameServiceReference<AddressableAssetService> _assetService;
         private AddressableAssetService AssetService => _assetService.Reference;

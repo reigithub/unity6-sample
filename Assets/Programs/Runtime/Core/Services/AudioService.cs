@@ -12,7 +12,7 @@ using UnityEngine.AddressableAssets;
 
 namespace Game.Core.Services
 {
-    public class AudioService : IGameService
+    public class AudioService : IAudioService
     {
         private GameServiceReference<MasterDataService> _masterDataService;
         private MemoryDatabase MemoryDatabase => _masterDataService.Reference.MemoryDatabase;

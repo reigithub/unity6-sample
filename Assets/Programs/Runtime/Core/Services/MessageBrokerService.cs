@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Game.Core.Services
 {
-    public class MessageBrokerService : IGameService
+    public class MessageBrokerService : IMessageBrokerService
     {
         // BuiltinContainerBuilder.BuildServiceProviderした後に、Subscribeし始める必要があるため
         // AddMessageBroker～BuildServiceProviderを1ヶ所に集約してみる

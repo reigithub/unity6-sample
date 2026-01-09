@@ -14,7 +14,7 @@ namespace Game.Core.Services
     /// <summary>
     /// GameSceneの遷移挙動を制御するサービス
     /// </summary>
-    public partial class GameSceneService : IGameService
+    public partial class GameSceneService : IGameSceneService
     {
         private GameServiceReference<AddressableAssetService> _assetService;
         private AddressableAssetService AssetService => _assetService.Reference;

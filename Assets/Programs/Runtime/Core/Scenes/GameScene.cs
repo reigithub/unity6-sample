@@ -150,7 +150,7 @@ namespace Game.Core.Scenes
         where TGameScene : IGameScene
         where TGameSceneComponent : IGameSceneComponent
     {
-        public TGameSceneComponent SceneComponent { get; protected set; }
+        protected TGameSceneComponent SceneComponent { get; set; }
 
         public override UniTask PreInitialize()
         {
@@ -213,7 +213,7 @@ namespace Game.Core.Scenes
         protected override async UniTask LoadScene()
         {
             _asset = await AssetService.LoadAssetAsync<GameObject>(AssetPathOrAddress);
-            _instance = GameObject.Instantiate(_asset);
+            _instance = UnityEngine.Object.Instantiate(_asset);
             GameSceneHelper.MoveToGameRootScene(_instance);
         }
 
@@ -301,7 +301,6 @@ namespace Game.Core.Scenes
     }
 
     // 主にダイアログ用(オーバーレイ表示想定)
-    // Memo: MonoBehaviourを使う以上、C#では多重継承できないので、個別作成
     public abstract class GameDialogScene<TScene, TComponent, TResult> : GameScene<TScene, TComponent>,
         IGameDialogSceneInitializer<TComponent, TResult>, IGameSceneResult<TResult>
         where TScene : IGameScene

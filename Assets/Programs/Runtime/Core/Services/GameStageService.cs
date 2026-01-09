@@ -2,13 +2,11 @@
 using System.Linq;
 using Game.Contents.Scenes;
 using MessagePipe;
-using UnityEngine;
 
 namespace Game.Core.Services
 {
-    public class GameStageService : IGameService
+    public class GameStageService : IGameStageService
     {
-        private GameObject _gameStageService;
         private readonly Dictionary<int, GameStageResultData> _gameStageResults = new();
 
         public bool TryAddResult(GameStageResultData result)
