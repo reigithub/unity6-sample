@@ -28,7 +28,7 @@ namespace Game.Core.Services
 
         UniTask<TResult> TransitionDialogAsync<TScene, TComponent, TResult>(Func<TComponent, IGameSceneResult<TResult>, UniTask> initializer = null)
             where TScene : GameDialogScene<TScene, TComponent, TResult>, new()
-            where TComponent : GameSceneComponent;
+            where TComponent : IGameSceneComponent;
 
         bool IsProcessing(Type type);
 

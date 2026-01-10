@@ -110,7 +110,7 @@ namespace Game.Core.Services
 
         public async UniTask<TResult> TransitionDialogAsync<TScene, TComponent, TResult>(Func<TComponent, IGameSceneResult<TResult>, UniTask> initializer = null)
             where TScene : GameDialogScene<TScene, TComponent, TResult>, new()
-            where TComponent : GameSceneComponent
+            where TComponent : IGameSceneComponent
         {
             // ダイアログは複数開く事ができる
             // Memo: ダイアログはプロセス中に再度要求されたら閉じる挙動とする(ここは後でダイアログ毎に変えられるようにするかもしれない)
